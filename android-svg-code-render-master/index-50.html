@@ -672,6 +672,72 @@ async function init(){
   var p=new URLSearchParams(location.search);
   if(p.get('admin')==='trendyol-secret')go('adminlogin');
   var r=p.get('ref');if(r){var e=document.getElementById('r_rf');if(e)e.value=r;}
+  // استعادة الجلسة المحفوظة
+  await restoreSession();
+}
+
+// حفظ الجلسة في localStorage
+function saveSession(email, password, isAdmin){
+  try{
+    if(isAdmin){
+      localStorage.setItem('trendyol_admin', '1');
+      localStorage.setItem('trendyol_admin_pw', password);
+    }else{
+      localStorage.setItem('trendyol_email', email);
+      localStorage.setItem('trendyol_password', password);
+      localStorage.setItem('trendyol_user_id', ME ? ME.id : '');
+    }
+    localStorage.setItem('trendyol_session_time', Date.now().toString());
+  }catch(e){console.error('Error saving session:',e);}
+}
+
+// استعادة الجلسة من localStorage
+async function restoreSession(){
+  try{
+    var savedEmail=localStorage.getItem('trendyol_email');
+    var savedPassword=localStorage.getItem('trendyol_password');
+    var savedAdmin=localStorage.getItem('trendyol_admin');
+    var savedAdminPw=localStorage.getItem('trendyol_admin_pw');
+    var sessionTime=parseInt(localStorage.getItem('trendyol_session_time')||'0');
+    
+    // التحقق من أن الجلسة لم تنته (30 يوم)
+    if(Date.now()-sessionTime>30*24*60*60*1000){
+      clearSession();
+      return;
+    }
+    
+    if(savedAdmin==='1'&&savedAdminPw){
+      // استعادة جلسة الأدمن
+      var r=await DB.from('admins').select('id').eq('username','admin').eq('password',savedAdminPw).single();
+      if(!r.error&&r.data){
+        ADM=true;ME=null;
+        go('admin');
+        return;
+      }
+    }else if(savedEmail&&savedPassword){
+      // استعادة جلسة المستخدم
+      var r=await DB.from('users').select('*').eq('email',savedEmail).eq('password',savedPassword).single();
+      if(!r.error&&r.data){
+        if(r.data.status==='suspended'){
+          clearSession();
+          return;
+        }
+        ME=r.data;ADM=false;
+        go('user');
+        return;
+      }
+    }
+  }catch(e){console.error('Error restoring session:',e);clearSession();}
+}
+
+// مسح الجلسة
+function clearSession(){
+  localStorage.removeItem('trendyol_email');
+  localStorage.removeItem('trendyol_password');
+  localStorage.removeItem('trendyol_admin');
+  localStorage.removeItem('trendyol_admin_pw');
+  localStorage.removeItem('trendyol_user_id');
+  localStorage.removeItem('trendyol_session_time');
 }
 
 async function loadC(){
@@ -766,6 +832,7 @@ async function doLogin(){
   if(r.error||!r.data){tst('err','خطأ','البريد أو كلمة المرور غير صحيحة');return;}
   if(r.data.status==='suspended'){tst('err','الحساب محظور 🚫','تواصل مع الدعم');return;}
   ME=r.data;ADM=false;
+  saveSession(em,pw,false);
   tst('ok','مرحباً بك 👋','تم تسجيل الدخول');
   setTimeout(function(){go('user');},500);
 }
@@ -776,6 +843,7 @@ async function doAdminLogin(){
   var r=await DB.from('admins').select('id').eq('username','admin').eq('password',pw).single();
   if(r.error||!r.data){tst('err','خطأ','كلمة المرور غير صحيحة');return;}
   ADM=true;ME=null;
+  saveSession('','',true);
   setTimeout(function(){go('admin');},500);
 }
 
@@ -792,11 +860,12 @@ async function doRegister(){
   if(r.error){tst('err','خطأ',r.error.message);return;}
   if(rb){var ru2=await DB.from('users').select('refs_count').eq('id',rb).single();await DB.from('users').update({refs_count:(ru2.data?.refs_count||0)+1}).eq('id',rb);}
   ME=r.data;ADM=false;
+  saveSession(em,pw,false);
   tst('ok','تم إنشاء الحساب 🎉','حسابك قيد التفعيل — سيُفعَّل قريباً');
   setTimeout(function(){go('user');},600);
 }
 
-function doLogout(){if(RT)clearInterval(RT);RT=null;ME=null;ADM=false;tst('info','تم الخروج','إلى اللقاء 👋');setTimeout(function(){go('landing');},400);}
+function doLogout(){if(RT)clearInterval(RT);RT=null;ME=null;ADM=false;clearSession();tst('info','تم الخروج','إلى اللقاء 👋');setTimeout(function(){go('landing');},400);}
 
 async function renderAll(){
   if(!ME)return;
