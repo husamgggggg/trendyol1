@@ -1,0 +1,22 @@
+{
+  "name": "ترنديول - منصة الاستثمار",
+  "short_name": "Trendyol",
+  "description": "منصة ترنديول للاستثمار",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a1628",
+  "theme_color": "#0d1e38",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["finance", "business"],
+  "lang": "ar",
+  "dir": "rtl"
+}
+

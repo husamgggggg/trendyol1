@@ -1,0 +1,14 @@
+#!/bin/bash
+DOMAIN="trendyol-invest.com"
+REMOTE_DIR="/var/www/${DOMAIN}"
+echo "🧹 حذف محتويات ${REMOTE_DIR}..."
+rm -rf ${REMOTE_DIR}/* ${REMOTE_DIR}/.* 2>/dev/null || true
+mkdir -p ${REMOTE_DIR}
+chown -R www-data:www-data ${REMOTE_DIR}
+chmod -R 755 ${REMOTE_DIR}
+rm -f /etc/nginx/sites-available/${DOMAIN}
+rm -f /etc/nginx/sites-enabled/${DOMAIN}
+systemctl stop nginx 2>/dev/null || true
+rm -f /var/log/nginx/${DOMAIN}.*.log 2>/dev/null || true
+echo "✅ تم التنظيف بنجاح!"
+

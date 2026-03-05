@@ -461,9 +461,8 @@ select option{background:#162640;color:#e2d5b8;}
     <div class="atab" data-t="deps">💰 الإيداعات</div>
     <div class="atab" data-t="wds">💸 السحوبات</div>
     <div class="atab" data-t="kyc">🪪 التوثيق</div>
-    <div class="atab" data-t="notif">🔔 الإشعارات</div>
     <div class="atab" data-t="set">⚙️ الإعدادات</div>
-    <div style="margin-right:auto;display:flex;align-items:center;padding:0 0.6rem"><button class="btn bg-red btn-sm" onclick="doLogout()">خروج</button></div>
+    <div style="margin-right:auto;display:flex;align-items:center;padding:0 0.6rem"><button class="btn bg-gr btn-sm" onclick="doLogout()">خروج</button></div>
   </div>
   <div class="ab">
     <!-- STATS -->
@@ -545,24 +544,6 @@ select option{background:#162640;color:#e2d5b8;}
       <div style="font-size:1.2rem;font-weight:800;margin-bottom:1rem">🪪 التوثيق</div>
       <div class="ulist" id="adm-kl"><div style="text-align:center;padding:2rem;color:#8a7a5a">لا توجد طلبات</div></div>
     </div>
-    <!-- NOTIFICATIONS -->
-    <div id="at-notif" class="asec">
-      <div style="font-size:1.2rem;font-weight:800;margin-bottom:1rem">🔔 إرسال إشعارات</div>
-      <div class="sbox">
-        <div style="font-size:0.95rem;font-weight:800;color:#f0c96a;margin-bottom:0.9rem">📤 إرسال إشعار جديد</div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0.85rem;margin-bottom:0.9rem">
-          <div class="fld"><label>إرسال إلى</label><select id="n-tgt"><option value="all">🌍 جميع المستخدمين</option></select></div>
-          <div class="fld"><label>نوع الإشعار</label><select id="n-type"><option value="info">ℹ️ معلومات</option><option value="success">✅ نجاح</option><option value="warning">⚠️ تحذير</option><option value="error">❌ خطأ</option></select></div>
-        </div>
-        <div class="fld"><label>عنوان الإشعار</label><input id="n-title" placeholder="مثال: إعلان مهم"></div>
-        <div class="fld"><label>محتوى الإشعار</label><textarea id="n-content" placeholder="اكتب محتوى الإشعار هنا..." style="width:100%;padding:0.68rem 0.9rem;background:#0a1628;border:1.5px solid rgba(212,169,74,0.2);border-radius:10px;color:#e2d5b8;font-family:'Tajawal',sans-serif;font-size:0.87rem;outline:none;min-height:100px;resize:vertical;"></textarea></div>
-        <button class="btn bg-gold btn-full" onclick="sendNotification()">📤 إرسال الإشعار الآن</button>
-      </div>
-      <div class="panel">
-        <div class="pt">📋 سجل الإشعارات المُرسلة</div>
-        <div class="tbl"><table><thead><tr><th>المستخدم</th><th>النوع</th><th>العنوان</th><th>وقت الإرسال</th><th>الحالة</th></tr></thead><tbody id="notif-tbl"><tr class="et"><td colspan="5">لا توجد إشعارات</td></tr></tbody></table></div>
-      </div>
-    </div>
     <!-- SETTINGS -->
     <div id="at-set" class="asec">
       <div style="font-size:1.2rem;font-weight:800;margin-bottom:1rem">⚙️ الإعدادات</div>
@@ -570,7 +551,7 @@ select option{background:#162640;color:#e2d5b8;}
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:1rem">
           <div class="fld"><label>محفظة TRON TRC-20</label><input id="s-tron" placeholder="عنوان محفظة TRON"></div>
           <div class="fld"><label>محفظة Ethereum ERC-20</label><input id="s-eth" placeholder="عنوان محفظة ETH"></div>
-          <div class="fld"><label>يوزر Telegram للدعم</label><input id="s-telegram" placeholder="@username"></div>
+          <div class="fld"><label>إيميل الدعم</label><input id="s-email" placeholder="support@trendyol.invest"></div>
           <div class="fld"><label>رسوم السحب (%)</label><input type="number" id="s-fee" value="6"></div>
           <div class="fld"><label>الحد الأدنى للسحب ($)</label><input type="number" id="s-mw" value="50"></div>
           <div class="fld"><label>كلمة مرور جديدة للأدمن</label><input type="password" id="s-ap" placeholder="اتركه فارغاً للإبقاء" oninput="this.dataset.changed='1'"></div>
@@ -672,96 +653,30 @@ select option{background:#162640;color:#e2d5b8;}
 <div class="ov" id="m-sup">
   <div class="modal" style="text-align:center"><button class="mc" onclick="closeM('m-sup')">✕</button>
     <div class="mt-m">💬 الدعم الفني</div>
-    <div style="font-size:2.2rem;margin:1rem 0">📱</div>
-    <div style="font-weight:700;margin-bottom:0.4rem">تواصل معنا عبر Telegram</div>
-    <div style="background:#0a1628;border:1px solid rgba(212,169,74,0.2);border-radius:10px;padding:0.65rem;font-weight:700;color:#f0c96a;margin:0.85rem 0" id="sup-tg">@username</div>
-    <button class="btn bg-gold btn-full" onclick="openTelegram()" style="padding:0.8rem;font-size:1rem">📱 للتواصل اضغط هنا</button>
-    <div style="font-size:0.75rem;color:#8a7a5a;margin-top:0.8rem">سيتم فتح Telegram مباشرة</div>
+    <div style="font-size:2.2rem;margin:1rem 0">📧</div>
+    <div style="font-weight:700;margin-bottom:0.4rem">تواصل عبر البريد الإلكتروني</div>
+    <div style="background:#0a1628;border:1px solid rgba(212,169,74,0.2);border-radius:10px;padding:0.65rem;font-weight:700;color:#f0c96a;margin:0.85rem 0" id="sup-em"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="681b1d1818071a1c281c1a0d060c1107044601061e0d1b1c">[email&#160;protected]</a></div>
+    <button class="btn bg-gold" onclick="window.location.href='mailto:'+C.email">📨 فتح البريد</button>
   </div>
 </div>
 
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 var DB=supabase.createClient('https://hnytoognlhubnopmgfay.supabase.co','sb_publishable_s28RnLc2XDGcLX2OnrhBUw_sljae1aZ');
-var C={tron:'',eth:'',telegram:'',fee:6,mw:50};
+var C={tron:'',eth:'',email:'support@trendyol.invest',fee:6,mw:50};
 var ME=null,ADM=false,TC=[],NL=[],UN=0,RT=null,PI=null,PC=null,DA=100,DN='tron';
 var popTimerInt=null;
-
-// حفظ الجلسة في localStorage
-function saveSession(){
-  if(ME){
-    localStorage.setItem('trendyol_user',JSON.stringify({id:ME.id,email:ME.email}));
-    localStorage.setItem('trendyol_type','user');
-  }else if(ADM){
-    localStorage.setItem('trendyol_type','admin');
-  }
-}
-
-// استعادة الجلسة من localStorage
-async function restoreSession(){
-  var type=localStorage.getItem('trendyol_type');
-  if(!type)return false;
-  
-  if(type==='user'){
-    var userData=localStorage.getItem('trendyol_user');
-    if(userData){
-      try{
-        var u=JSON.parse(userData);
-        var r=await DB.from('users').select('*').eq('id',u.id).single();
-        if(r.data&&!r.error){
-          // التحقق من أن الحساب لم يُحظر
-          if(r.data.status==='suspended'){
-            clearSession();
-            return false;
-          }
-          ME=r.data;
-          ADM=false;
-          go('user');
-          // تحديث البيانات بعد استعادة الجلسة
-          setTimeout(function(){renderAll();},100);
-          return true;
-        }
-      }catch(e){
-        clearSession();
-        return false;
-      }
-    }
-  }else if(type==='admin'){
-    // للبساطة، نتحقق فقط من وجود الجلسة
-    // يمكن إضافة تحقق أقوى هنا
-    ADM=true;
-    ME=null;
-    go('admin');
-    return true;
-  }
-  return false;
-}
-
-// مسح الجلسة
-function clearSession(){
-  localStorage.removeItem('trendyol_user');
-  localStorage.removeItem('trendyol_type');
-  ME=null;
-  ADM=false;
-}
 
 async function init(){
   try{await Promise.race([loadC(),new Promise(function(r){setTimeout(r,2000);})]);}catch(e){}
   startCD();
   var p=new URLSearchParams(location.search);
-  if(p.get('admin')==='trendyol-secret'){
-    go('adminlogin');
-    return;
-  }
-  // محاولة استعادة الجلسة
-  var restored=await restoreSession();
-  if(!restored){
-    var r=p.get('ref');if(r){var e=document.getElementById('r_rf');if(e)e.value=r;}
-  }
+  if(p.get('admin')==='trendyol-secret')go('adminlogin');
+  var r=p.get('ref');if(r){var e=document.getElementById('r_rf');if(e)e.value=r;}
 }
 
 async function loadC(){
   var r=await DB.from('settings').select('*').eq('id',1).single();
-  if(r.data){C.tron=r.data.tron_wallet||'';C.eth=r.data.eth_wallet||'';C.telegram=r.data.telegram_username||'';C.fee=r.data.withdraw_fee||6;C.mw=r.data.min_withdraw||50;}
+  if(r.data){C.tron=r.data.tron_wallet||'';C.eth=r.data.eth_wallet||'';C.email=r.data.support_email||'support@trendyol.invest';C.fee=r.data.withdraw_fee||6;C.mw=r.data.min_withdraw||50;}
 }
 
 // REALTIME
@@ -778,12 +693,6 @@ function subRT(uid){
       r.data.forEach(function(c){showPop(c.code,c.profit_pct);addN(c.code,c.profit_pct);});
       await loadTC();renderCG();
     }
-    // فحص الإشعارات الجديدة
-    var notifs=await DB.from('notifications').select('*').eq('user_id',uid).eq('read',false).gt('created_at',since);
-    if(notifs.data&&notifs.data.length){
-      notifs.data.forEach(function(n){addN(null,null,n.type,n.title,n.content);});
-      renderNP();
-    }
     var u=await DB.from('users').select('*').eq('id',uid).single();
     if(!u.data)return;
     ME=u.data;rCards();
@@ -795,13 +704,6 @@ function subRT(uid){
         var diff=(Date.now()-new Date(lc.data.used_at).getTime())/1000;
         if(diff>=900)await applyPending();
       }
-    }
-    // فحص الإشعارات الجديدة
-    var since=new Date(lastCheck-8000).toISOString();
-    var notifs=await DB.from('notifications').select('*').eq('user_id',uid).eq('read',false).gt('created_at',since);
-    if(notifs.data&&notifs.data.length){
-      notifs.data.forEach(function(n){addN(null,null,n.type,n.title,n.content);});
-      renderNP();
     }
   },8000);
 }
@@ -835,11 +737,10 @@ async function expireCode(code){
 function closePop(){clearInterval(popTimerInt);document.getElementById('cpop').classList.remove('show');PC=null;}
 function actP(){if(PC){document.getElementById('cin').value=PC;closePop();useCode();}}
 
-function addN(c,p,type,title,content){var n={type:type||"code",c:c||"",p:p||"",title:title||"",content:content||"",t:new Date()};NL.unshift(n);UN++;var b=document.querySelector(".bnum");if(b){b.textContent=UN;b.classList.add("on");}renderNP();}
-function renderNP(){var b=document.getElementById("npb");if(!NL.length){b.innerHTML="<div class=\"np-e\">لا توجد إشعارات</div>";return;}b.innerHTML=NL.slice(0,15).map(function(n){var icon="🔔",color="#22c55e";if(n.type==="code"){icon="🎯";return"<div class=\"np-i\"><div style=\"font-size:0.77rem;font-weight:600;margin-bottom:0.18rem\">"+icon+" كود ربح جديد</div><div class=\"np-c\">"+n.c+"</div><div style=\"font-size:0.7rem;color:"+color+"\">ربح "+n.p+"%</div><div style=\"font-size:0.63rem;color:#8a7a5a;margin-top:0.12rem\">"+fd(n.t)+"</div></div>";}else{if(n.type==="success"){icon="✅";color="#22c55e";}else if(n.type==="warning"){icon="⚠️";color="#f0c96a";}else if(n.type==="error"){icon="❌";color="#ef4444";}else{icon="ℹ️";color="#60a5fa";}}return"<div class=\"np-i\"><div style=\"font-size:0.77rem;font-weight:600;margin-bottom:0.18rem;color:"+color+"\">"+icon+" "+(n.title||"إشعار")+"</div><div style=\"font-size:0.7rem;color:#e2d5b8;line-height:1.5\">"+(n.content||"")+"</div><div style=\"font-size:0.63rem;color:#8a7a5a;margin-top:0.12rem\">"+fd(n.t)+"</div></div>";}}).join("");}
+function addN(c,p){NL.unshift({c:c,p:p,t:new Date()});UN++;var b=document.querySelector('.bnum');if(b){b.textContent=UN;b.classList.add('on');}renderNP();}
+function renderNP(){var b=document.getElementById('npb');if(!NL.length){b.innerHTML='<div class="np-e">لا توجد إشعارات</div>';return;}b.innerHTML=NL.slice(0,15).map(function(n){return'<div class="np-i"><div style="font-size:0.77rem;font-weight:600;margin-bottom:0.18rem">🎯 كود ربح جديد</div><div class="np-c">'+n.c+'</div><div style="font-size:0.7rem;color:#22c55e">ربح '+n.p+'%</div><div style="font-size:0.63rem;color:#8a7a5a;margin-top:0.12rem">'+fd(n.t)+'</div></div>';}).join('');}
 function clearN(){NL=[];UN=0;var b=document.querySelector('.bnum');if(b){b.textContent='0';b.classList.remove('on');}renderNP();}
-function toggleNP(){var p=document.getElementById('npanel');p.classList.toggle('open');if(p.classList.contains('open')){UN=0;var b=document.querySelector('.bnum');if(b){b.textContent='0';b.classList.remove('on');}markNotificationsRead();}}
-async function markNotificationsRead(){if(!ME||!ME.id)return;await DB.from('notifications').update({read:true}).eq('user_id',ME.id).eq('read',false);}
+function toggleNP(){var p=document.getElementById('npanel');p.classList.toggle('open');if(p.classList.contains('open')){UN=0;var b=document.querySelector('.bnum');if(b){b.textContent='0';b.classList.remove('on');}}}
 document.addEventListener('click',function(e){var p=document.getElementById('npanel'),b=document.querySelector('.bell');if(p&&b&&!p.contains(e.target)&&!b.contains(e.target))p.classList.remove('open');});
 
 function go(pg){
@@ -853,7 +754,7 @@ function go(pg){
 
 function upNav(pg){
   var n=document.getElementById('navR');
-  if(pg==='user'&&ME){n.innerHTML='<div class="bell" onclick="toggleNP()">🔔<span class="bnum" id="bnum">0</span></div><span style="color:#8a7a5a;font-size:0.76rem">👤 <strong style="color:#d4a94a">'+ME.name+'</strong></span><button class="btn bg-ol btn-sm" onclick="openM(\'m-sup\')">💬 دعم</button><button class="btn bg-red btn-sm" onclick="doLogout()">خروج</button>';}
+  if(pg==='user'&&ME){n.innerHTML='<div class="bell" onclick="toggleNP()">🔔<span class="bnum" id="bnum">0</span></div><span style="color:#8a7a5a;font-size:0.76rem">👤 <strong style="color:#d4a94a">'+ME.name+'</strong></span><button class="btn bg-ol btn-sm" onclick="openM(\'m-sup\')">💬 دعم</button><button class="btn bg-gr btn-sm" onclick="doLogout()">خروج</button>';}
   else if(pg==='admin'||pg==='adminlogin'){n.innerHTML='';}
   else{n.innerHTML='<button class="btn bg-ol btn-sm" onclick="go(\'login\')">دخول</button><button class="btn bg-gold btn-sm" onclick="go(\'register\')">ابدأ الآن</button>';}
 }
@@ -865,7 +766,6 @@ async function doLogin(){
   if(r.error||!r.data){tst('err','خطأ','البريد أو كلمة المرور غير صحيحة');return;}
   if(r.data.status==='suspended'){tst('err','الحساب محظور 🚫','تواصل مع الدعم');return;}
   ME=r.data;ADM=false;
-  saveSession(); // حفظ الجلسة
   tst('ok','مرحباً بك 👋','تم تسجيل الدخول');
   setTimeout(function(){go('user');},500);
 }
@@ -876,7 +776,6 @@ async function doAdminLogin(){
   var r=await DB.from('admins').select('id').eq('username','admin').eq('password',pw).single();
   if(r.error||!r.data){tst('err','خطأ','كلمة المرور غير صحيحة');return;}
   ADM=true;ME=null;
-  saveSession(); // حفظ الجلسة
   setTimeout(function(){go('admin');},500);
 }
 
@@ -893,18 +792,11 @@ async function doRegister(){
   if(r.error){tst('err','خطأ',r.error.message);return;}
   if(rb){var ru2=await DB.from('users').select('refs_count').eq('id',rb).single();await DB.from('users').update({refs_count:(ru2.data?.refs_count||0)+1}).eq('id',rb);}
   ME=r.data;ADM=false;
-  saveSession(); // حفظ الجلسة
   tst('ok','تم إنشاء الحساب 🎉','حسابك قيد التفعيل — سيُفعَّل قريباً');
   setTimeout(function(){go('user');},600);
 }
 
-function doLogout(){
-  if(RT)clearInterval(RT);
-  RT=null;
-  clearSession(); // مسح الجلسة من localStorage
-  tst('info','تم الخروج','إلى اللقاء 👋');
-  setTimeout(function(){go('landing');},400);
-}
+function doLogout(){if(RT)clearInterval(RT);RT=null;ME=null;ADM=false;tst('info','تم الخروج','إلى اللقاء 👋');setTimeout(function(){go('landing');},400);}
 
 async function renderAll(){
   if(!ME)return;
@@ -927,8 +819,6 @@ async function renderAll(){
   rCards();
   await loadTC();renderCG();
   rWallet();rRef();rHist();
-  // تحميل الإشعارات غير المقروءة
-  await loadUserNotifications();
   // إذا كان هناك ربح معلق استأنف العداد
   if((ME.pending_profit||0)>0){
     var lc=await DB.from('codes_log').select('used_at').eq('user_id',ME.id).eq('used',true).order('used_at',{ascending:false}).limit(1).single();
@@ -1122,8 +1012,8 @@ async function renderAdm(){
   await loadC();
   var et=document.getElementById('adm-tron'),ee=document.getElementById('adm-eth');
   if(et)et.textContent=C.tron||'لم يُضبط';if(ee)ee.textContent=C.eth||'لم يُضبط';
-  var supTg=document.getElementById('sup-tg');if(supTg)supTg.textContent=C.telegram||'لم يُضبط';
-  ['s-tron','s-eth','s-telegram','s-fee','s-mw'].forEach(function(id){var el=document.getElementById(id);if(!el)return;if(id==='s-tron')el.value=C.tron;else if(id==='s-eth')el.value=C.eth;else if(id==='s-telegram')el.value=C.telegram;else if(id==='s-fee')el.value=C.fee;else if(id==='s-mw')el.value=C.mw;});
+  document.getElementById('sup-em').textContent=C.email;
+  ['s-tron','s-eth','s-email','s-fee','s-mw'].forEach(function(id){var el=document.getElementById(id);if(!el)return;if(id==='s-tron')el.value=C.tron;else if(id==='s-eth')el.value=C.eth;else if(id==='s-email')el.value=C.email;else if(id==='s-fee')el.value=C.fee;else if(id==='s-mw')el.value=C.mw;});
   var users=await DB.from('users').select('*',{count:'exact'});
   var deps=await DB.from('deposits').select('amount,status');
   var wds=await DB.from('withdrawals').select('amount,status');
@@ -1135,7 +1025,7 @@ async function renderAdm(){
   document.getElementById('a-u').textContent=users.count||0;document.getElementById('a-a').textContent=ac;document.getElementById('a-d').textContent='$'+td;document.getElementById('a-w').textContent='$'+tw;document.getElementById('a-p').textContent=pn;document.getElementById('a-c').textContent=codes.count||0;
   var sel=document.getElementById('c-tgt');
   if(users.data)sel.innerHTML='<option value="all">🌍 جميع النشطين</option>'+users.data.map(function(u){return'<option value="'+u.id+'">'+u.name+'</option>';}).join('');
-  loadU();loadD();loadW();loadK();loadCL();loadRefs();chkSch();loadNotif();
+  loadU();loadD();loadW();loadK();loadCL();loadRefs();chkSch();
 }
 
 async function loadU(q){
@@ -1378,85 +1268,10 @@ async function rejK(id){await DB.from('users').update({kyc_status:'rejected'}).e
 async function editW(t){var cur=t==='tron'?C.tron:C.eth;var val=prompt('أدخل عنوان محفظة '+(t==='tron'?'TRON TRC-20':'Ethereum ERC-20')+':',cur||'');if(val!==null&&val.trim()){var upd={id:1};upd[t==='tron'?'tron_wallet':'eth_wallet']=val.trim();await DB.from('settings').upsert([upd]);if(t==='tron')C.tron=val.trim();else C.eth=val.trim();document.getElementById('adm-'+t).textContent=val.trim();tst('ok','تم الحفظ','');}}
 
 async function saveSet(){
-  var upd={id:1,tron_wallet:document.getElementById('s-tron').value.trim(),eth_wallet:document.getElementById('s-eth').value.trim(),telegram_username:document.getElementById('s-telegram').value.trim(),withdraw_fee:parseFloat(document.getElementById('s-fee').value)||6,min_withdraw:parseFloat(document.getElementById('s-mw').value)||50};
+  var upd={id:1,tron_wallet:document.getElementById('s-tron').value.trim(),eth_wallet:document.getElementById('s-eth').value.trim(),support_email:document.getElementById('s-email').value.trim(),withdraw_fee:parseFloat(document.getElementById('s-fee').value)||6,min_withdraw:parseFloat(document.getElementById('s-mw').value)||50};
   var np=document.getElementById('s-ap').value;
   if(np){await DB.from('admins').update({password:np}).eq('username','admin');}
   await DB.from('settings').upsert([upd]);await loadC();tst('ok','تم الحفظ','✅');
-}
-
-// فتح Telegram
-function openTelegram(){
-  var username=C.telegram||'';
-  if(!username||username===''){
-    tst('err','خطأ','لم يتم إعداد يوزر Telegram بعد');
-    return;
-  }
-  // إزالة @ إذا كان موجوداً
-  username=username.replace('@','');
-  // محاولة فتح Telegram
-  var tgUrl='https://t.me/'+username;
-  window.open(tgUrl,'_blank');
-}
-
-// إرسال إشعار من لوحة التحكم
-async function sendNotification(){
-  var tgt=document.getElementById('n-tgt').value;
-  var type=document.getElementById('n-type').value;
-  var title=document.getElementById('n-title').value.trim();
-  var content=document.getElementById('n-content').value.trim();
-  if(!title||!content){tst('err','خطأ','أدخل العنوان والمحتوى');return;}
-  var users=[];
-  if(tgt==='all'){
-    var r=await DB.from('users').select('id').eq('status','active');
-    if(!r.data||!r.data.length){tst('err','لا يوجد مستخدمون نشطون','');return;}
-    users=r.data;
-  }else{
-    users=[{id:tgt}];
-  }
-  var ins=users.map(function(u){return{user_id:u.id,type:type,title:title,content:content,read:false,created_at:new Date().toISOString()};});
-  var r2=await DB.from('notifications').insert(ins);
-  if(r2.error){tst('err','خطأ',r2.error.message);return;}
-  document.getElementById('n-title').value='';
-  document.getElementById('n-content').value='';
-  tst('ok','تم الإرسال ✅','تم إرسال الإشعار لـ '+users.length+' مستخدم');
-  setTimeout(function(){loadNotif();},500);
-}
-
-// تحميل قائمة المستخدمين في قائمة الإرسال
-async function loadNotifUsers(){
-  var sel=document.getElementById('n-tgt');
-  if(!sel)return;
-  var users=await DB.from('users').select('id,name').eq('status','active').order('name');
-  if(users.data){
-    sel.innerHTML='<option value="all">🌍 جميع المستخدمين</option>'+users.data.map(function(u){return'<option value="'+u.id+'">'+u.name+'</option>';}).join('');
-  }
-}
-
-// تحميل سجل الإشعارات
-async function loadNotif(){
-  var r=await DB.from('notifications').select('*').order('created_at',{ascending:false}).limit(50);
-  var notifs=r.data||[];
-  var uids=[...new Set(notifs.map(function(n){return n.user_id;}))];
-  var nm={};
-  if(uids.length){
-    var ur=await DB.from('users').select('id,name').in('id',uids);
-    if(ur.data)ur.data.forEach(function(u){nm[u.id]=u.name;});
-  }
-  var typeIcons={info:'ℹ️',success:'✅',warning:'⚠️',error:'❌'};
-  var typeColors={info:'#60a5fa',success:'#22c55e',warning:'#f0c96a',error:'#ef4444'};
-  document.getElementById('notif-tbl').innerHTML=notifs.length?notifs.map(function(n){
-    return'<tr><td>'+(nm[n.user_id]||'—')+'</td><td><span style="color:'+typeColors[n.type||'info']+'">'+typeIcons[n.type||'info']+' '+n.type+'</span></td><td style="font-weight:700">'+n.title+'</td><td>'+fd(n.created_at)+'</td><td><span class="badge '+(n.read?'b-g':'b-y')+'">'+(n.read?'مقروء':'غير مقروء')+'</span></td></tr>';
-  }).join(''):'<tr class="et"><td colspan="5">لا توجد إشعارات</td></tr>';
-}
-
-// تحميل إشعارات المستخدم
-async function loadUserNotifications(){
-  if(!ME||!ME.id)return;
-  var r=await DB.from('notifications').select('*').eq('user_id',ME.id).eq('read',false).order('created_at',{ascending:false}).limit(20);
-  if(r.data&&r.data.length){
-    r.data.forEach(function(n){addN(null,null,n.type,n.title,n.content);});
-    renderNP();
-  }
 }
 
 // SCHEDULER
@@ -1507,8 +1322,6 @@ document.getElementById('atabs').addEventListener('click',function(e){
   tab.classList.add('on');
   var sec=document.getElementById('at-'+tab.dataset.t);if(sec)sec.classList.add('on');
   if(tab.dataset.t==='refs')loadRefs();
-  if(tab.dataset.t==='notif'){loadNotif();loadNotifUsers();}
-  if(tab.dataset.t==='notif'){loadNotif();loadNotifUsers();}
 });
 
 // COUNTDOWN

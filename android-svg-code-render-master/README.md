@@ -157,4 +157,3 @@ Currently integrated version is v1.3
 
 ## Code license
 android-svg-code-render is licensed under the [**Apache License v2.0**](http://www.apache.org/licenses/LICENSE-2.0).
-# trendyol

@@ -1,3 +1,52 @@
-/*.iml
-.idea
-build
+# ملفات النظام
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# ملفات IDE
+.idea/
+.vscode/
+*.iml
+
+# ملفات Log
+*.log
+
+# ملفات مؤقتة
+*.tmp
+*.temp
+
+# ملفات Build
+build/
+dist/
+*.class
+
+# ملفات Android
+*.apk
+*.ap_
+*.aab
+
+# ملفات Java
+*.jar
+*.war
+*.ear
+
+# ملفات Gradle
+.gradle/
+gradle-wrapper.jar
+
+# ملفات محلية
+.env
+.env.local
+*.local
+
+# ملفات SSL (لا ترفع المفاتيح!)
+*.key
+*.pem
+*.crt
+
+# ملفات النسخ الاحتياطي
+*.bak
+*.backup
+
