@@ -670,9 +670,9 @@ async function init(){
   try{await Promise.race([loadC(),new Promise(function(r){setTimeout(r,2000);})]);}catch(e){}
   startCD();
   var p=new URLSearchParams(location.search);
-  // التحقق من subdomain admin (يدعم أي subdomain يبدأ بـ admin)
+  // التحقق من subdomain admin
   var hostname=window.location.hostname;
-  if(hostname.startsWith('admin.')||hostname.includes('.admin.')||hostname==='admin.trendyol-invest.com'){
+  if(hostname.startsWith('admin.')||hostname.startsWith('panel-trendyol-')||hostname.includes('.admin.')||hostname==='admin.trendyol-invest.com'){
     go('adminlogin');
     return;
   }
