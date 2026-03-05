@@ -551,7 +551,7 @@ select option{background:#162640;color:#e2d5b8;}
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:1rem">
           <div class="fld"><label>محفظة TRON TRC-20</label><input id="s-tron" placeholder="عنوان محفظة TRON"></div>
           <div class="fld"><label>محفظة Ethereum ERC-20</label><input id="s-eth" placeholder="عنوان محفظة ETH"></div>
-          <div class="fld"><label>إيميل الدعم</label><input id="s-email" placeholder="support@trendyol.invest"></div>
+          <div class="fld"><label>إيميل الدعم</label><input id="s-email" placeholder="noreply@trendyol-invest.com"></div>
           <div class="fld"><label>رسوم السحب (%)</label><input type="number" id="s-fee" value="6"></div>
           <div class="fld"><label>الحد الأدنى للسحب ($)</label><input type="number" id="s-mw" value="50"></div>
           <div class="fld"><label>كلمة مرور جديدة للأدمن</label><input type="password" id="s-ap" placeholder="اتركه فارغاً للإبقاء" oninput="this.dataset.changed='1'"></div>
@@ -655,14 +655,14 @@ select option{background:#162640;color:#e2d5b8;}
     <div class="mt-m">💬 الدعم الفني</div>
     <div style="font-size:2.2rem;margin:1rem 0">📧</div>
     <div style="font-weight:700;margin-bottom:0.4rem">تواصل عبر البريد الإلكتروني</div>
-    <div style="background:#0a1628;border:1px solid rgba(212,169,74,0.2);border-radius:10px;padding:0.65rem;font-weight:700;color:#f0c96a;margin:0.85rem 0" id="sup-em"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="681b1d1818071a1c281c1a0d060c1107044601061e0d1b1c">[email&#160;protected]</a></div>
+    <div style="background:#0a1628;border:1px solid rgba(212,169,74,0.2);border-radius:10px;padding:0.65rem;font-weight:700;color:#f0c96a;margin:0.85rem 0" id="sup-em">noreply@trendyol-invest.com</div>
     <button class="btn bg-gold" onclick="window.location.href='mailto:'+C.email">📨 فتح البريد</button>
   </div>
 </div>
 
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 var DB=supabase.createClient('https://hnytoognlhubnopmgfay.supabase.co','sb_publishable_s28RnLc2XDGcLX2OnrhBUw_sljae1aZ');
-var C={tron:'',eth:'',email:'support@trendyol.invest',fee:6,mw:50};
+var C={tron:'',eth:'',email:'noreply@trendyol-invest.com',fee:6,mw:50};
 var ME=null,ADM=false,TC=[],NL=[],UN=0,RT=null,PI=null,PC=null,DA=100,DN='tron';
 var popTimerInt=null;
 
@@ -742,7 +742,7 @@ function clearSession(){
 
 async function loadC(){
   var r=await DB.from('settings').select('*').eq('id',1).single();
-  if(r.data){C.tron=r.data.tron_wallet||'';C.eth=r.data.eth_wallet||'';C.email=r.data.support_email||'support@trendyol.invest';C.fee=r.data.withdraw_fee||6;C.mw=r.data.min_withdraw||50;}
+  if(r.data){C.tron=r.data.tron_wallet||'';C.eth=r.data.eth_wallet||'';C.email=r.data.support_email||'noreply@trendyol-invest.com';C.fee=r.data.withdraw_fee||6;C.mw=r.data.min_withdraw||50;}
 }
 
 // REALTIME
