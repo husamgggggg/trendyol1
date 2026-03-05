@@ -670,6 +670,11 @@ async function init(){
   try{await Promise.race([loadC(),new Promise(function(r){setTimeout(r,2000);})]);}catch(e){}
   startCD();
   var p=new URLSearchParams(location.search);
+  // التحقق من subdomain admin
+  if(window.location.hostname.startsWith('admin.')){
+    go('adminlogin');
+    return;
+  }
   if(p.get('admin')==='trendyol-secret'){go('adminlogin');return;}
   var r=p.get('ref');if(r){var e=document.getElementById('r_rf');if(e)e.value=r;}
   // استعادة الجلسة المحفوظة - تأخير بسيط لضمان تحميل DOM
