@@ -670,10 +670,12 @@ async function init(){
   try{await Promise.race([loadC(),new Promise(function(r){setTimeout(r,2000);})]);}catch(e){}
   startCD();
   var p=new URLSearchParams(location.search);
-  if(p.get('admin')==='trendyol-secret')go('adminlogin');
+  if(p.get('admin')==='trendyol-secret'){go('adminlogin');return;}
   var r=p.get('ref');if(r){var e=document.getElementById('r_rf');if(e)e.value=r;}
-  // استعادة الجلسة المحفوظة
-  await restoreSession();
+  // استعادة الجلسة المحفوظة - تأخير بسيط لضمان تحميل DOM
+  setTimeout(async function(){
+    await restoreSession();
+  },100);
 }
 
 // حفظ الجلسة في localStorage
@@ -701,7 +703,7 @@ async function restoreSession(){
     var sessionTime=parseInt(localStorage.getItem('trendyol_session_time')||'0');
     
     // التحقق من أن الجلسة لم تنته (30 يوم)
-    if(Date.now()-sessionTime>30*24*60*60*1000){
+    if(sessionTime>0&&Date.now()-sessionTime>30*24*60*60*1000){
       clearSession();
       return;
     }
@@ -711,8 +713,14 @@ async function restoreSession(){
       var r=await DB.from('admins').select('id').eq('username','admin').eq('password',savedAdminPw).single();
       if(!r.error&&r.data){
         ADM=true;ME=null;
-        go('admin');
+        upNav('admin');
+        document.querySelectorAll('.pg').forEach(function(p){p.classList.remove('on');});
+        var el=document.getElementById('pg-admin');if(el)el.classList.add('on');
+        await renderAdm();
+        window.scrollTo(0,0);
         return;
+      }else{
+        clearSession();
       }
     }else if(savedEmail&&savedPassword){
       // استعادة جلسة المستخدم
@@ -723,8 +731,16 @@ async function restoreSession(){
           return;
         }
         ME=r.data;ADM=false;
-        go('user');
+        // تحديث واجهة المستخدم مباشرة
+        upNav('user');
+        document.querySelectorAll('.pg').forEach(function(p){p.classList.remove('on');});
+        var el=document.getElementById('pg-user');if(el)el.classList.add('on');
+        // تحميل البيانات
+        await renderAll();
+        window.scrollTo(0,0);
         return;
+      }else{
+        clearSession();
       }
     }
   }catch(e){console.error('Error restoring session:',e);clearSession();}

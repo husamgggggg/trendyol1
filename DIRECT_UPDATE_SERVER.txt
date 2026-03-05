@@ -1,0 +1,28 @@
+═══════════════════════════════════════════════════════════
+أوامر تحديث السيرفر مباشرة - انسخ والصق على السيرفر
+═══════════════════════════════════════════════════════════
+
+cd /var/www/trendyol-invest.com
+
+# سحب التحديثات من GitHub
+git pull origin main
+
+# نسخ index.html
+cp android-svg-code-render-master/index-50.html index.html
+
+# إعطاء الصلاحيات
+chown -R www-data:www-data /var/www/trendyol-invest.com
+chmod -R 755 /var/www/trendyol-invest.com
+
+# إعادة تحميل Nginx
+systemctl reload nginx
+
+echo "✅ تم التحديث!"
+echo ""
+echo "💡 الآن:"
+echo "1. امسح كاش المتصفح (Ctrl+Shift+Delete)"
+echo "2. أعد تحميل الصفحة (Ctrl+F5)"
+echo "3. تحقق من:"
+echo "   - البريد الإلكتروني: noreply@trendyol-invest.com"
+echo "   - الجلسة تبقى محفوظة بعد تحديث الصفحة"
+

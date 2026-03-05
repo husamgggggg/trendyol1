@@ -1,0 +1,71 @@
+# أوامر الإصلاح الكاملة - انسخ والصق على السيرفر
+
+# 1. إصلاح Git ownership
+git config --global --add safe.directory /var/www/trendyol-invest.com
+
+# 2. الانتقال إلى المجلد
+cd /var/www/trendyol-invest.com
+
+# 3. سحب التحديثات
+git pull origin main
+
+# 4. نسخ index.html
+cp android-svg-code-render-master/index-50.html index.html
+
+# 5. إنشاء manifest.json
+cat > manifest.json << 'EOF'
+{
+  "name": "ترنديول - منصة الاستثمار",
+  "short_name": "Trendyol",
+  "description": "منصة ترنديول للاستثمار",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a1628",
+  "theme_color": "#0d1e38",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}
+EOF
+
+# 6. إنشاء sw.js
+cat > sw.js << 'EOF'
+const CACHE_NAME = 'trendyol-v1';
+self.addEventListener('install', function(event) {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then(function(cache) {
+      return cache.addAll(['/', '/index.html']);
+    })
+  );
+});
+self.addEventListener('fetch', function(event) {
+  event.respondWith(
+    caches.match(event.request).then(function(response) {
+      return response || fetch(event.request);
+    })
+  );
+});
+EOF
+
+# 7. إعطاء الصلاحيات
+chown -R www-data:www-data /var/www/trendyol-invest.com
+chmod -R 755 /var/www/trendyol-invest.com
+
+# 8. التحقق من Nginx
+if systemctl is-active --quiet nginx; then
+    systemctl reload nginx
+elif command -v nginx &> /dev/null; then
+    systemctl start nginx
+else
+    apt-get update && apt-get install -y nginx
+    systemctl enable nginx
+    systemctl start nginx
+fi
+
+echo "✅ تم!"
+

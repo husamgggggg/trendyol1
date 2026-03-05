@@ -1,0 +1,20 @@
+# أوامر إصلاح الملفات المفقودة - على السيرفر
+
+cd /var/www/trendyol-invest.com
+
+# 1. إزالة سكريبت Cloudflare من index.html
+sed -i '/email-decode.min.js/d' index.html
+
+# 2. إنشاء icon-192.png بسيط (إذا كان ImageMagick مثبت)
+if command -v convert &> /dev/null; then
+    convert -size 192x192 xc:"#d4a94a" -gravity center -pointsize 72 -fill "#0a1628" -annotate +0+0 "T" icon-192.png
+else
+    echo "⚠️  ImageMagick غير مثبت"
+    echo "💡 يمكنك نسخ أي صورة 192x192 بكسل كـ icon-192.png"
+fi
+
+# 3. إعادة تحميل Nginx
+systemctl reload nginx
+
+echo "✅ تم!"
+

@@ -1,0 +1,20 @@
+# أوامر تحديث السيرفر - انسخ والصق على السيرفر
+
+cd /var/www/trendyol-invest.com
+
+# سحب التحديثات من GitHub
+git pull origin main
+
+# نسخ index.html
+cp android-svg-code-render-master/index-50.html index.html
+
+# إعطاء الصلاحيات
+chown -R www-data:www-data /var/www/trendyol-invest.com
+chmod -R 755 /var/www/trendyol-invest.com
+
+# إعادة تحميل Nginx
+systemctl reload nginx
+
+echo "✅ تم التحديث!"
+echo "💡 امسح كاش المتصفح (Ctrl+Shift+Delete) ثم أعد تحميل الصفحة (Ctrl+F5)"
+

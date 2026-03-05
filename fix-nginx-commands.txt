@@ -1,0 +1,73 @@
+# أوامر إصلاح Nginx - انسخ والصق على السيرفر
+
+# 1. التحقق من ما يستخدم المنفذ 80
+echo "🔍 التحقق من المنفذ 80..."
+lsof -i :80 2>/dev/null || netstat -tuln | grep :80 || ss -tuln | grep :80
+
+# 2. التحقق من Apache (إذا كان مثبتاً)
+if systemctl list-units --type=service | grep -q apache; then
+    echo "🔧 إيقاف Apache..."
+    systemctl stop apache2 2>/dev/null || service apache2 stop 2>/dev/null || true
+    systemctl disable apache2 2>/dev/null || true
+fi
+
+# 3. التحقق من الخدمات الأخرى على المنفذ 80
+PID=$(lsof -ti :80 2>/dev/null || fuser 80/tcp 2>/dev/null | awk '{print $1}' || echo "")
+if [ -n "$PID" ]; then
+    echo "📋 PID العملية: $PID"
+    ps aux | grep $PID | grep -v grep
+    echo "🔧 إيقاف العملية..."
+    kill $PID 2>/dev/null || true
+    sleep 2
+fi
+
+# 4. التحقق من تكوين Nginx
+echo "🔍 التحقق من تكوين Nginx..."
+nginx -t
+
+# 5. إنشاء إعدادات Nginx إذا لم تكن موجودة
+DOMAIN="trendyol-invest.com"
+REMOTE_DIR="/var/www/${DOMAIN}"
+
+if [ ! -f "/etc/nginx/sites-available/${DOMAIN}" ]; then
+    echo "📝 إنشاء إعدادات Nginx..."
+    cat > /etc/nginx/sites-available/${DOMAIN} << EOF
+server {
+    listen 80;
+    server_name ${DOMAIN} www.${DOMAIN};
+    
+    root ${REMOTE_DIR};
+    index index.html;
+    
+    location / {
+        try_files \$uri \$uri/ /index.html;
+    }
+    
+    location ~* \.(jpg|jpeg|png|gif|ico|css|js|svg|woff|woff2|ttf|eot)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+    
+    location /sw.js {
+        add_header Cache-Control "no-cache, no-store, must-revalidate";
+    }
+    
+    access_log /var/log/nginx/${DOMAIN}.access.log;
+    error_log /var/log/nginx/${DOMAIN}.error.log;
+}
+EOF
+    
+    ln -sf /etc/nginx/sites-available/${DOMAIN} /etc/nginx/sites-enabled/${DOMAIN}
+    rm -f /etc/nginx/sites-enabled/default
+fi
+
+# 6. بدء Nginx
+echo "🚀 بدء Nginx..."
+systemctl start nginx
+systemctl enable nginx
+
+# 7. التحقق من الحالة
+systemctl status nginx --no-pager
+
+echo "✅ تم!"
+
