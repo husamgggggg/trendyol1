@@ -1085,24 +1085,30 @@ async function applyPending(){
 function selA(a,el){DA=a;document.querySelectorAll('.damt').forEach(function(o){o.classList.remove('sl');});el.classList.add('sl');document.getElementById('dep-an').textContent='$'+a;}
 function selN(n,el){DN=n;document.querySelectorAll('.net').forEach(function(o){o.classList.remove('sl');});el.classList.add('sl');var addr=n==='tron'?C.tron:C.eth;document.getElementById('dep-addr').textContent=addr||'لم يُضبط';document.getElementById('dep-an').textContent='$'+DA;document.getElementById('dep-area').classList.remove('hid');
   // إنشاء QR Code
-  var qrEl=document.getElementById('dep-qr');
-  if(qrEl){
-    qrEl.innerHTML='';
-    if(addr&&addr!=='لم يُضبط'&&addr.trim()){
-      // استخدام API بسيط لإنشاء QR Code
-      var qrUrl='https://api.qrserver.com/v1/create-qr-code/?size=120x120&margin=1&data='+encodeURIComponent(addr);
-      var img=document.createElement('img');
-      img.src=qrUrl;
-      img.style.width='120px';
-      img.style.height='120px';
-      img.style.display='block';
-      img.style.borderRadius='4px';
-      img.onerror=function(){qrEl.innerHTML='<div style="width:120px;height:120px;display:flex;align-items:center;justify-content:center;color:#8a7a5a;font-size:0.7rem;text-align:center">QR Code<br>غير متاح</div>';};
-      qrEl.appendChild(img);
+  setTimeout(function(){
+    var qrEl=document.getElementById('dep-qr');
+    if(qrEl){
+      qrEl.innerHTML='';
+      if(addr&&addr!=='لم يُضبط'&&addr.trim()&&addr!=='—'){
+        // استخدام API بسيط لإنشاء QR Code
+        var qrUrl='https://api.qrserver.com/v1/create-qr-code/?size=120x120&margin=1&data='+encodeURIComponent(addr);
+        var img=document.createElement('img');
+        img.src=qrUrl;
+        img.style.width='120px';
+        img.style.height='120px';
+        img.style.display='block';
+        img.style.borderRadius='4px';
+        img.alt='QR Code';
+        img.onload=function(){console.log('QR Code loaded:',addr);};
+        img.onerror=function(){console.error('QR Code error for:',addr);qrEl.innerHTML='<div style="width:120px;height:120px;display:flex;align-items:center;justify-content:center;color:#8a7a5a;font-size:0.7rem;text-align:center;padding:0.5rem">QR Code<br>غير متاح</div>';};
+        qrEl.appendChild(img);
+      }else{
+        qrEl.innerHTML='<div style="width:120px;height:120px;display:flex;align-items:center;justify-content:center;color:#8a7a5a;font-size:0.7rem;text-align:center;padding:0.5rem">عنوان<br>غير موجود</div>';
+      }
     }else{
-      qrEl.innerHTML='<div style="width:120px;height:120px;display:flex;align-items:center;justify-content:center;color:#8a7a5a;font-size:0.7rem;text-align:center">عنوان<br>غير موجود</div>';
+      console.error('dep-qr element not found');
     }
-  }
+  },100);
   // إعادة تعيين الأزرار
   var submitBtn=document.getElementById('dep-submit-btn');
   var supportBtn=document.getElementById('dep-support-btn');
