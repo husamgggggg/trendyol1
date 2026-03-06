@@ -616,8 +616,8 @@ select option{background:#162640;color:#e2d5b8;}
         <div style="flex:1;min-width:200px;">
           <div class="wrow"><div class="wa" id="dep-addr">—</div><button class="btn bg-ol btn-sm" onclick="cpW()">نسخ</button></div>
         </div>
-        <div style="background:#fff;padding:0.5rem;border-radius:10px;border:2px solid rgba(212,169,74,0.3);">
-          <div id="dep-qr" style="width:120px;height:120px;"></div>
+        <div style="background:#fff;padding:0.5rem;border-radius:10px;border:2px solid rgba(212,169,74,0.3);display:flex;align-items:center;justify-content:center;">
+          <div id="dep-qr" style="width:120px;height:120px;min-height:120px;display:flex;align-items:center;justify-content:center;"></div>
         </div>
       </div>
       <div class="ibox"><strong>⚠️ مهم</strong>المبلغ: <span id="dep-an" style="color:#f0c96a;font-weight:700">$100</span> — أرسله بالضبط ثم اضغط تأكيد.</div>
@@ -1086,20 +1086,28 @@ function selA(a,el){DA=a;document.querySelectorAll('.damt').forEach(function(o){
 function selN(n,el){DN=n;document.querySelectorAll('.net').forEach(function(o){o.classList.remove('sl');});el.classList.add('sl');var addr=n==='tron'?C.tron:C.eth;document.getElementById('dep-addr').textContent=addr||'لم يُضبط';document.getElementById('dep-an').textContent='$'+DA;document.getElementById('dep-area').classList.remove('hid');
   // إنشاء QR Code
   var qrEl=document.getElementById('dep-qr');
-  if(qrEl&&addr&&addr!=='لم يُضبط'){
+  if(qrEl){
     qrEl.innerHTML='';
-    // استخدام API بسيط لإنشاء QR Code
-    var qrUrl='https://api.qrserver.com/v1/create-qr-code/?size=120x120&data='+encodeURIComponent(addr);
-    var img=document.createElement('img');
-    img.src=qrUrl;
-    img.style.width='120px';
-    img.style.height='120px';
-    img.style.display='block';
-    qrEl.appendChild(img);
+    if(addr&&addr!=='لم يُضبط'&&addr.trim()){
+      // استخدام API بسيط لإنشاء QR Code
+      var qrUrl='https://api.qrserver.com/v1/create-qr-code/?size=120x120&margin=1&data='+encodeURIComponent(addr);
+      var img=document.createElement('img');
+      img.src=qrUrl;
+      img.style.width='120px';
+      img.style.height='120px';
+      img.style.display='block';
+      img.style.borderRadius='4px';
+      img.onerror=function(){qrEl.innerHTML='<div style="width:120px;height:120px;display:flex;align-items:center;justify-content:center;color:#8a7a5a;font-size:0.7rem;text-align:center">QR Code<br>غير متاح</div>';};
+      qrEl.appendChild(img);
+    }else{
+      qrEl.innerHTML='<div style="width:120px;height:120px;display:flex;align-items:center;justify-content:center;color:#8a7a5a;font-size:0.7rem;text-align:center">عنوان<br>غير موجود</div>';
+    }
   }
   // إعادة تعيين الأزرار
-  document.getElementById('dep-submit-btn').classList.remove('hid');
-  document.getElementById('dep-support-btn').classList.add('hid');
+  var submitBtn=document.getElementById('dep-submit-btn');
+  var supportBtn=document.getElementById('dep-support-btn');
+  if(submitBtn)submitBtn.classList.remove('hid');
+  if(supportBtn)supportBtn.classList.add('hid');
 }
 function cpW(){navigator.clipboard.writeText(document.getElementById('dep-addr').textContent);tst('info','تم النسخ','');}
 async function subDep(){
