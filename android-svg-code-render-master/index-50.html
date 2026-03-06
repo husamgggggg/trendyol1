@@ -88,6 +88,14 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;height:60px;background:#0d1e
 .ft{font-weight:700;font-size:0.92rem;margin-bottom:0.3rem;}
 .fp{color:#8a7a5a;font-size:0.78rem;line-height:1.7;}
 footer{background:rgba(5,12,25,0.97);border-top:1px solid rgba(212,169,74,0.12);padding:1.5rem;text-align:center;color:#8a7a5a;font-size:0.72rem;}
+/* TELEGRAM FLOATING BUTTON 3D */
+#tg-float-btn{position:fixed;bottom:20px;left:20px;z-index:500;width:64px;height:64px;background:linear-gradient(135deg,#0088cc,#229ED9);border-radius:50%;display:none;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 8px 24px rgba(0,136,204,0.4),0 0 0 0 rgba(0,136,204,0.5);animation:tgPulse 2s infinite,tgFloat 3s ease-in-out infinite;transition:all 0.3s;border:3px solid rgba(255,255,255,0.2);}
+#tg-float-btn:hover{transform:scale(1.1) translateY(-3px);box-shadow:0 12px 32px rgba(0,136,204,0.6),0 0 0 8px rgba(0,136,204,0.2);}
+#tg-float-btn:active{transform:scale(0.95);}
+#tg-float-btn svg{width:36px;height:36px;fill:#fff;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3));}
+@keyframes tgPulse{0%,100%{box-shadow:0 8px 24px rgba(0,136,204,0.4),0 0 0 0 rgba(0,136,204,0.5);}50%{box-shadow:0 8px 24px rgba(0,136,204,0.4),0 0 0 12px rgba(0,136,204,0);}}
+@keyframes tgFloat{0%,100%{transform:translateY(0) rotate(0deg);}50%{transform:translateY(-8px) rotate(5deg);}}
+@media(max-width:700px){#tg-float-btn{bottom:80px;left:15px;width:56px;height:56px;}#tg-float-btn svg{width:32px;height:32px;}}
 /* AUTH */
 .auth-wrap{min-height:calc(100vh - 60px);display:flex;align-items:center;justify-content:center;padding:1.5rem;}
 .auth-box{background:#0f1e35;border:1px solid rgba(212,169,74,0.22);border-radius:20px;padding:2rem 1.8rem;width:100%;max-width:400px;}
@@ -554,6 +562,7 @@ select option{background:#162640;color:#e2d5b8;}
           <div class="fld"><label>إيميل الدعم</label><input id="s-email" placeholder="noreply@trendyol-invest.com"></div>
           <div class="fld"><label>رسوم السحب (%)</label><input type="number" id="s-fee" value="6"></div>
           <div class="fld"><label>الحد الأدنى للسحب ($)</label><input type="number" id="s-mw" value="50"></div>
+          <div class="fld"><label>رابط التلغرام</label><input id="s-telegram" placeholder="https://t.me/username أو https://t.me/joinchat/..."></div>
           <div class="fld"><label>كلمة مرور جديدة للأدمن</label><input type="password" id="s-ap" placeholder="اتركه فارغاً للإبقاء" oninput="this.dataset.changed='1'"></div>
         </div>
         <button class="btn bg-gold mt2" onclick="saveSet()">💾 حفظ الإعدادات</button>
@@ -603,9 +612,17 @@ select option{background:#162640;color:#e2d5b8;}
     </div>
     <div id="dep-area" class="hid">
       <div style="font-size:0.7rem;color:#8a7a5a;margin-bottom:0.4rem">أرسل المبلغ إلى هذه المحفظة</div>
-      <div class="wrow"><div class="wa" id="dep-addr">—</div><button class="btn bg-ol btn-sm" onclick="cpW()">نسخ</button></div>
+      <div style="display:flex;gap:1rem;align-items:flex-start;margin-bottom:0.8rem;flex-wrap:wrap;">
+        <div style="flex:1;min-width:200px;">
+          <div class="wrow"><div class="wa" id="dep-addr">—</div><button class="btn bg-ol btn-sm" onclick="cpW()">نسخ</button></div>
+        </div>
+        <div style="background:#fff;padding:0.5rem;border-radius:10px;border:2px solid rgba(212,169,74,0.3);">
+          <div id="dep-qr" style="width:120px;height:120px;"></div>
+        </div>
+      </div>
       <div class="ibox"><strong>⚠️ مهم</strong>المبلغ: <span id="dep-an" style="color:#f0c96a;font-weight:700">$100</span> — أرسله بالضبط ثم اضغط تأكيد.</div>
-      <button class="btn bg-gold btn-full" onclick="subDep()">✅ أرسلت — في انتظار التأكيد</button>
+      <button class="btn bg-gold btn-full" id="dep-submit-btn" onclick="subDep()">✅ أرسلت — في انتظار التأكيد</button>
+      <button class="btn bg-gold btn-full hid" id="dep-support-btn" onclick="sendToSupport()">📤 إرسال المعاملة للدعم</button>
       <div style="margin-top:0.9rem;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:10px;padding:0.75rem 0.9rem;font-size:0.74rem;line-height:1.8;color:#e2d5b8;">
         <div style="font-weight:800;color:#ef4444;margin-bottom:0.3rem">⚠️ تعليمات مهمة</div>
         بعد الإيداع يرجى إرسال <strong style="color:#f0c96a">صورة عن معاملة الإيداع</strong> للدعم لتفعيل الحساب<br>
@@ -662,7 +679,7 @@ select option{background:#162640;color:#e2d5b8;}
 
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 var DB=supabase.createClient('https://hnytoognlhubnopmgfay.supabase.co','sb_publishable_s28RnLc2XDGcLX2OnrhBUw_sljae1aZ');
-var C={tron:'',eth:'',email:'noreply@trendyol-invest.com',fee:6,mw:50};
+var C={tron:'',eth:'',email:'noreply@trendyol-invest.com',fee:6,mw:50,telegram:''};
 var ME=null,ADM=false,TC=[],NL=[],UN=0,RT=null,PI=null,PC=null,DA=100,DN='tron';
 var popTimerInt=null;
 
@@ -764,7 +781,17 @@ function clearSession(){
 
 async function loadC(){
   var r=await DB.from('settings').select('*').eq('id',1).single();
-  if(r.data){C.tron=r.data.tron_wallet||'';C.eth=r.data.eth_wallet||'';C.email=r.data.support_email||'noreply@trendyol-invest.com';C.fee=r.data.withdraw_fee||6;C.mw=r.data.min_withdraw||50;}
+  if(r.data){C.tron=r.data.tron_wallet||'';C.eth=r.data.eth_wallet||'';C.email=r.data.support_email||'noreply@trendyol-invest.com';C.fee=r.data.withdraw_fee||6;C.mw=r.data.min_withdraw||50;C.telegram=r.data.telegram_link||'';}
+  // تحديث زر التلغرام
+  var tgBtn=document.getElementById('tg-float-btn');
+  if(tgBtn){
+    if(C.telegram&&C.telegram.trim()){
+      tgBtn.style.display='flex';
+      tgBtn.onclick=function(){window.open(C.telegram,'_blank');};
+    }else{
+      tgBtn.style.display='none';
+    }
+  }
 }
 
 // REALTIME
@@ -865,7 +892,8 @@ async function doAdminLogin(){
   var r=await DB.from('admins').select('id').eq('username','admin').eq('password',pw).single();
   if(r.error||!r.data){tst('err','خطأ','كلمة المرور غير صحيحة');return;}
   ADM=true;ME=null;
-  saveSession('','',true);
+  // حفظ جلسة الأدمن مع كلمة المرور لاستعادتها بعد إعادة تحميل الصفحة
+  saveSession('admin',pw,true);
   setTimeout(function(){go('admin');},500);
 }
 
@@ -1055,13 +1083,53 @@ async function applyPending(){
 }
 
 function selA(a,el){DA=a;document.querySelectorAll('.damt').forEach(function(o){o.classList.remove('sl');});el.classList.add('sl');document.getElementById('dep-an').textContent='$'+a;}
-function selN(n,el){DN=n;document.querySelectorAll('.net').forEach(function(o){o.classList.remove('sl');});el.classList.add('sl');var addr=n==='tron'?C.tron:C.eth;document.getElementById('dep-addr').textContent=addr||'لم يُضبط';document.getElementById('dep-an').textContent='$'+DA;document.getElementById('dep-area').classList.remove('hid');}
+function selN(n,el){DN=n;document.querySelectorAll('.net').forEach(function(o){o.classList.remove('sl');});el.classList.add('sl');var addr=n==='tron'?C.tron:C.eth;document.getElementById('dep-addr').textContent=addr||'لم يُضبط';document.getElementById('dep-an').textContent='$'+DA;document.getElementById('dep-area').classList.remove('hid');
+  // إنشاء QR Code
+  var qrEl=document.getElementById('dep-qr');
+  if(qrEl&&addr&&addr!=='لم يُضبط'){
+    qrEl.innerHTML='';
+    // استخدام API بسيط لإنشاء QR Code
+    var qrUrl='https://api.qrserver.com/v1/create-qr-code/?size=120x120&data='+encodeURIComponent(addr);
+    var img=document.createElement('img');
+    img.src=qrUrl;
+    img.style.width='120px';
+    img.style.height='120px';
+    img.style.display='block';
+    qrEl.appendChild(img);
+  }
+  // إعادة تعيين الأزرار
+  document.getElementById('dep-submit-btn').classList.remove('hid');
+  document.getElementById('dep-support-btn').classList.add('hid');
+}
 function cpW(){navigator.clipboard.writeText(document.getElementById('dep-addr').textContent);tst('info','تم النسخ','');}
 async function subDep(){
   if(!ME)return;
   await DB.from('deposits').insert([{user_id:ME.id,user_name:ME.name,amount:DA,network:DN.toUpperCase(),status:'pending',created_at:new Date().toISOString()}]);
   await DB.from('transactions').insert([{user_id:ME.id,type:'إيداع',amount:DA,network:DN.toUpperCase(),status:'معلق',created_at:new Date().toISOString()}]);
-  closeM('m-dep');tst('ok','طلب إيداع مُرسل ✅','في انتظار تأكيد الإدارة');
+  // إخفاء زر الإرسال وإظهار زر إرسال المعاملة للدعم
+  document.getElementById('dep-submit-btn').classList.add('hid');
+  document.getElementById('dep-support-btn').classList.remove('hid');
+  tst('ok','طلب إيداع مُرسل ✅','يرجى إرسال صورة المعاملة للدعم');
+}
+function sendToSupport(){
+  if(!C.telegram||!C.telegram.trim()){tst('err','خطأ','رابط التلغرام غير مُضبط');return;}
+  if(!ME)return;
+  var msg='مرحباً، أريد تفعيل طلب إيداع:\n\n';
+  msg+='الآيدي: '+ME.id+'\n';
+  msg+='الاسم: '+ME.name+'\n';
+  msg+='المبلغ: $'+DA+'\n';
+  msg+='الشبكة: '+(DN==='tron'?'TRON TRC-20':'Ethereum ERC-20')+'\n';
+  msg+='عنوان المحفظة: '+document.getElementById('dep-addr').textContent+'\n\n';
+  msg+='يرجى تفعيل الطلب بعد التحقق من المعاملة.';
+  var url=C.telegram;
+  if(url.includes('t.me/')){
+    var username=url.replace('https://t.me/','').replace('http://t.me/','').split('/')[0].split('?')[0];
+    url='https://t.me/'+username+'?text='+encodeURIComponent(msg);
+  }else{
+    url+=(url.includes('?')?'&':'?')+'text='+encodeURIComponent(msg);
+  }
+  window.open(url,'_blank');
+  tst('info','تم فتح التلغرام','أرسل صورة المعاملة للدعم');
 }
 
 function calcF(){var a=parseFloat(document.getElementById('wd-am').value)||0;document.getElementById('wd-af').textContent='$'+(a*(1-C.fee/100)).toFixed(2);}
@@ -1104,7 +1172,7 @@ async function renderAdm(){
   var et=document.getElementById('adm-tron'),ee=document.getElementById('adm-eth');
   if(et)et.textContent=C.tron||'لم يُضبط';if(ee)ee.textContent=C.eth||'لم يُضبط';
   document.getElementById('sup-em').textContent=C.email;
-  ['s-tron','s-eth','s-email','s-fee','s-mw'].forEach(function(id){var el=document.getElementById(id);if(!el)return;if(id==='s-tron')el.value=C.tron;else if(id==='s-eth')el.value=C.eth;else if(id==='s-email')el.value=C.email;else if(id==='s-fee')el.value=C.fee;else if(id==='s-mw')el.value=C.mw;});
+  ['s-tron','s-eth','s-email','s-fee','s-mw','s-telegram'].forEach(function(id){var el=document.getElementById(id);if(!el)return;if(id==='s-tron')el.value=C.tron;else if(id==='s-eth')el.value=C.eth;else if(id==='s-email')el.value=C.email;else if(id==='s-fee')el.value=C.fee;else if(id==='s-mw')el.value=C.mw;else if(id==='s-telegram')el.value=C.telegram;});
   var users=await DB.from('users').select('*',{count:'exact'});
   var deps=await DB.from('deposits').select('amount,status');
   var wds=await DB.from('withdrawals').select('amount,status');
@@ -1359,7 +1427,7 @@ async function rejK(id){await DB.from('users').update({kyc_status:'rejected'}).e
 async function editW(t){var cur=t==='tron'?C.tron:C.eth;var val=prompt('أدخل عنوان محفظة '+(t==='tron'?'TRON TRC-20':'Ethereum ERC-20')+':',cur||'');if(val!==null&&val.trim()){var upd={id:1};upd[t==='tron'?'tron_wallet':'eth_wallet']=val.trim();await DB.from('settings').upsert([upd]);if(t==='tron')C.tron=val.trim();else C.eth=val.trim();document.getElementById('adm-'+t).textContent=val.trim();tst('ok','تم الحفظ','');}}
 
 async function saveSet(){
-  var upd={id:1,tron_wallet:document.getElementById('s-tron').value.trim(),eth_wallet:document.getElementById('s-eth').value.trim(),support_email:document.getElementById('s-email').value.trim(),withdraw_fee:parseFloat(document.getElementById('s-fee').value)||6,min_withdraw:parseFloat(document.getElementById('s-mw').value)||50};
+  var upd={id:1,tron_wallet:document.getElementById('s-tron').value.trim(),eth_wallet:document.getElementById('s-eth').value.trim(),support_email:document.getElementById('s-email').value.trim(),withdraw_fee:parseFloat(document.getElementById('s-fee').value)||6,min_withdraw:parseFloat(document.getElementById('s-mw').value)||50,telegram_link:document.getElementById('s-telegram').value.trim()};
   var np=document.getElementById('s-ap').value;
   if(np){await DB.from('admins').update({password:np}).eq('username','admin');}
   await DB.from('settings').upsert([upd]);await loadC();tst('ok','تم الحفظ','✅');
@@ -1434,6 +1502,7 @@ function showRef(){
 }
 function cpRCode2(){navigator.clipboard.writeText(ME.ref_code||'');tst('info','تم النسخ','كود الإحالة مُنسخ');}
 function cpRef2(){navigator.clipboard.writeText(location.origin+location.pathname+'?ref='+(ME.ref_code||''));tst('info','تم النسخ','رابط الإحالة مُنسخ');}
+function openTelegram(){if(C.telegram&&C.telegram.trim()){window.open(C.telegram,'_blank');}else{tst('err','خطأ','رابط التلغرام غير مُضبط');}}
 function tst(type,title,text){var icons={ok:'✅',err:'❌',info:'ℹ️'};var el=document.createElement('div');el.className='tst '+type;el.innerHTML='<div style="font-size:1.1rem">'+(icons[type]||'📢')+'</div><div><div class="tt">'+title+'</div><div class="tp">'+text+'</div></div>';document.getElementById('toasts').appendChild(el);setTimeout(function(){el.style.animation='tOut 0.3s ease forwards';setTimeout(function(){el.remove();},300);},4500);return el;}
 function flyUp(txt){var el=document.createElement('div');el.className='fly';el.textContent=txt;el.style.cssText='left:'+(25+Math.random()*50)+'%;bottom:30%;';document.body.appendChild(el);setTimeout(function(){el.remove();},1600);}
 function mkC(){var c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',r='';for(var i=0;i<6;i++)r+=c[Math.floor(Math.random()*c.length)];return r;}
@@ -1443,5 +1512,11 @@ function sb(s){if(s==='مكتمل'||s==='مؤكد'||s==='approved')return'b-g';i
 window.addEventListener('DOMContentLoaded',init);
 if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(function(){});}
 </script>
+<!-- TELEGRAM FLOATING BUTTON 3D -->
+<div id="tg-float-btn" onclick="openTelegram()" title="تواصل معنا على التلغرام">
+  <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.14.18-.357.295-.6.295-.002 0-.003 0-.005 0l.213-3.054 5.56-5.022c.24-.213-.054-.334-.373-.12l-6.87 4.326-2.96-.924c-.64-.203-.658-.64.135-.954l11.566-4.458c.538-.196 1.006.128.832.941z" fill="#fff"/>
+  </svg>
+</div>
 </body>
 </html>
