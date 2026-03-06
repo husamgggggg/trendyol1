@@ -1188,8 +1188,9 @@ async function subDep(){
 function sendToSupport(){
   if(!C.telegram||!C.telegram.trim()){tst('err','خطأ','رابط التلغرام غير مُضبط');return;}
   if(!ME)return;
+  var shortId=document.getElementById('dep-uid')?document.getElementById('dep-uid').textContent:(ME.id?'#'+ME.id.split('-')[0].toUpperCase():'—');
   var msg='مرحباً، أريد تفعيل طلب إيداع:\n\n';
-  msg+='الآيدي: '+ME.id+'\n';
+  msg+='الآيدي: '+shortId+'\n';
   msg+='الاسم: '+ME.name+'\n';
   msg+='المبلغ: $'+DA+'\n';
   msg+='الشبكة: '+(DN==='tron'?'TRON TRC-20':'Ethereum ERC-20')+'\n';
