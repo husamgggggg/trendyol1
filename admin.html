@@ -571,13 +571,22 @@ select option{background:#162640;color:#e2d5b8;}
     <div class="ibox" style="text-align:center">
       <div style="font-size:0.75rem;color:#8a7a5a">المستخدم</div>
       <div style="font-weight:800;color:#f0c96a;font-size:1rem" id="adj-name">—</div>
-      <div style="font-size:0.75rem;color:#8a7a5a;margin-top:0.3rem">الرصيد الحالي: <strong style="color:#22c55e" id="adj-cur">$0</strong></div>
+      <div style="font-size:0.75rem;color:#8a7a5a;margin-top:0.3rem">الإجمالي الحالي: <strong style="color:#22c55e" id="adj-cur">$0</strong></div>
+      <div style="font-size:0.72rem;color:#8a7a5a;margin-top:0.3rem">الرصيد الأساسي: <strong style="color:#f0c96a" id="adj-cur-bal">$0</strong> | رصيد الأرباح: <strong style="color:#22c55e" id="adj-cur-pr">$0</strong></div>
     </div>
     <div class="fld">
       <label>نوع التعديل</label>
       <select id="adj-dir" style="width:100%;padding:0.55rem 0.8rem;background:#0a1628;border:1.5px solid rgba(212,169,74,0.25);border-radius:10px;color:#e2d5b8;font-family:'Tajawal',sans-serif;font-size:0.85rem">
         <option value="add">📥 إضافة رصيد</option>
         <option value="sub">📤 خصم رصيد</option>
+      </select>
+    </div>
+    <div class="fld">
+      <label>جهة التعديل</label>
+      <select id="adj-target" style="width:100%;padding:0.55rem 0.8rem;background:#0a1628;border:1.5px solid rgba(212,169,74,0.25);border-radius:10px;color:#e2d5b8;font-family:'Tajawal',sans-serif;font-size:0.85rem">
+        <option value="balance">الرصيد الأساسي</option>
+        <option value="profit">رصيد الأرباح</option>
+        <option value="auto">تلقائي عند الخصم</option>
       </select>
     </div>
     <div class="fld"><label>المبلغ ($)</label><input type="number" id="adj-amt" placeholder="أدخل المبلغ"></div>
@@ -1268,35 +1277,58 @@ async function loadU(q){
 async function adjBal(uid,name,curBal){
   document.getElementById('adj-uid').value=uid;
   document.getElementById('adj-name').textContent=name;
-  document.getElementById('adj-cur').textContent='$'+parseFloat(curBal).toFixed(2);
+  var u=await DB.from('users').select('balance,profit_bal').eq('id',uid).single();
+  var ba=u.data?.balance||0;
+  var pr=u.data?.profit_bal||0;
+  document.getElementById('adj-cur').textContent='$'+parseFloat((ba+pr)).toFixed(2);
+  document.getElementById('adj-cur-bal').textContent='$'+parseFloat(ba).toFixed(2);
+  document.getElementById('adj-cur-pr').textContent='$'+parseFloat(pr).toFixed(2);
   document.getElementById('adj-amt').value='';
   document.getElementById('adj-note').value='';
   document.getElementById('adj-dir').value='add';
+  document.getElementById('adj-target').value='balance';
   openM('m-adj');
 }
 async function confAdj(){
   var uid=document.getElementById('adj-uid').value;
   var amt=parseFloat(document.getElementById('adj-amt').value);
   var dir=document.getElementById('adj-dir').value;
+  var target=document.getElementById('adj-target').value;
   var note=document.getElementById('adj-note').value||'تعديل يدوي من الإدارة';
   if(!amt||isNaN(amt)||amt<=0){tst('err','خطأ','أدخل مبلغاً صحيحاً');return;}
   var u=await DB.from('users').select('balance,profit_bal').eq('id',uid).single();
+  if(u.error||!u.data){tst('err','خطأ','تعذر قراءة رصيد المستخدم');return;}
   var ba=u.data?.balance||0;var pr=u.data?.profit_bal||0;
   var newBa,newPr,type;
   if(dir==='add'){
-    newBa=parseFloat((ba+amt).toFixed(2));newPr=pr;type='إضافة رصيد 📥';
+    if(target==='profit'){
+      newBa=ba;newPr=parseFloat((pr+amt).toFixed(2));type='إضافة رصيد الأرباح 📈';
+    }else{
+      newBa=parseFloat((ba+amt).toFixed(2));newPr=pr;type='إضافة رصيد أساسي 📥';
+    }
   }else{
-    var total=parseFloat((ba+pr).toFixed(2));
-    if(amt>total){tst('err','خطأ','المبلغ أكبر من الرصيد $'+total.toFixed(2));return;}
-    if(amt<=pr){newPr=parseFloat((pr-amt).toFixed(2));newBa=ba;}
-    else{newPr=0;newBa=parseFloat((ba-(amt-pr)).toFixed(2));}
-    type='خصم رصيد 📤';
+    if(target==='balance'){
+      if(amt>ba){tst('err','خطأ','المبلغ أكبر من الرصيد الأساسي $'+ba.toFixed(2));return;}
+      newBa=parseFloat((ba-amt).toFixed(2));newPr=pr;type='خصم من الرصيد الأساسي 📤';
+    }else if(target==='profit'){
+      if(amt>pr){tst('err','خطأ','المبلغ أكبر من رصيد الأرباح $'+pr.toFixed(2));return;}
+      newPr=parseFloat((pr-amt).toFixed(2));newBa=ba;type='خصم من رصيد الأرباح 📉';
+    }else{
+      var total=parseFloat((ba+pr).toFixed(2));
+      if(amt>total){tst('err','خطأ','المبلغ أكبر من الرصيد $'+total.toFixed(2));return;}
+      if(amt<=pr){newPr=parseFloat((pr-amt).toFixed(2));newBa=ba;}
+      else{newPr=0;newBa=parseFloat((ba-(amt-pr)).toFixed(2));}
+      type='خصم رصيد 📤';
+    }
   }
-  await DB.from('users').update({balance:newBa,profit_bal:newPr}).eq('id',uid);
-  await DB.from('transactions').insert([{user_id:uid,type:type+' — '+note,amount:amt,network:'—',status:'مكتمل',created_at:new Date().toISOString()}]);
+  var upd=await DB.from('users').update({balance:newBa,profit_bal:newPr}).eq('id',uid);
+  if(upd.error){tst('err','فشل تعديل الرصيد',upd.error.message||'');return;}
+  var tr=await DB.from('transactions').insert([{user_id:uid,type:type+' — '+note,amount:amt,network:'—',status:'مكتمل',created_at:new Date().toISOString()}]);
+  if(tr.error){tst('err','تم تعديل الرصيد لكن فشل تسجيل العملية',tr.error.message||'');}
   closeM('m-adj');
   tst('ok','تم التعديل ✅',(dir==='add'?'أُضيف':'خُصم')+' $'+amt);
   loadU();
+  renderAdm();
 }
 async function activateU(id,name){
   var r=await DB.from('users').select('balance,bonus,ref_code').eq('id',id).single();
