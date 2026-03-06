@@ -710,7 +710,7 @@ function saveSession(email, password, isAdmin){
       localStorage.removeItem('trendyol_admin_pw');
     }else{
       localStorage.setItem('trendyol_email', email);
-      localStorage.setItem('trendyol_password', password);
+      localStorage.removeItem('trendyol_password');
       localStorage.setItem('trendyol_user_id', ME ? ME.id : '');
     }
     localStorage.setItem('trendyol_session_time', Date.now().toString());
@@ -746,6 +746,46 @@ async function restoreAdminSession(){
   }
 }
 
+async function getUserProfileForAuthUser(authUser){
+  if(!authUser||!authUser.email)return null;
+  try{
+    var byAuth=await DB.from('users').select('*').eq('auth_user_id',authUser.id).maybeSingle();
+    if(!byAuth.error&&byAuth.data)return byAuth.data;
+  }catch(e){}
+  var byEmail=await DB.from('users').select('*').eq('email',authUser.email).maybeSingle();
+  if(byEmail.error||!byEmail.data)return null;
+  try{
+    await DB.from('users').update({auth_user_id:authUser.id}).eq('id',byEmail.data.id);
+    byEmail.data.auth_user_id=authUser.id;
+  }catch(e){}
+  return byEmail.data;
+}
+
+async function restoreUserSession(){
+  try{
+    var s=await DB.auth.getSession();
+    var authUser=s.data&&s.data.session?s.data.session.user:null;
+    if(!authUser)return false;
+    var profile=await getUserProfileForAuthUser(authUser);
+    if(!profile)return false;
+    if(profile.status==='suspended'){
+      await DB.auth.signOut();
+      clearSession();
+      return false;
+    }
+    ME=profile;ADM=false;
+    upNav('user');
+    document.querySelectorAll('.pg').forEach(function(p){p.classList.remove('on');});
+    var el=document.getElementById('pg-user');if(el)el.classList.add('on');
+    await renderAll();
+    window.scrollTo(0,0);
+    return true;
+  }catch(e){
+    console.error('Error restoring user session:',e);
+    return false;
+  }
+}
+
 // استعادة الجلسة من localStorage
 async function restoreSession(){
   try{
@@ -760,8 +800,9 @@ async function restoreSession(){
     }
     
     if(IS_ADMIN_CONTEXT&&await restoreAdminSession())return;
+    if(!IS_ADMIN_CONTEXT&&await restoreUserSession())return;
     if(savedEmail&&savedPassword){
-      // استعادة جلسة المستخدم
+      // توافق مؤقت مع الجلسات القديمة التي خزنت كلمة المرور محلياً
       var r=await DB.from('users').select('*').eq('email',savedEmail).eq('password',savedPassword).single();
       if(!r.error&&r.data){
         if(r.data.status==='suspended'){
@@ -902,11 +943,37 @@ function upNav(pg){
 async function doLogin(){
   var em=document.getElementById('l_em').value.trim(),pw=document.getElementById('l_pw').value;
   if(!em||!pw){tst('err','خطأ','أدخل البريد وكلمة المرور');return;}
-  var r=await DB.from('users').select('*').eq('email',em).eq('password',pw).single();
-  if(r.error||!r.data){tst('err','خطأ','البريد أو كلمة المرور غير صحيحة');return;}
-  if(r.data.status==='suspended'){tst('err','الحساب محظور 🚫','تواصل مع الدعم');return;}
-  ME=r.data;ADM=false;
-  saveSession(em,pw,false);
+  var authLogin=await DB.auth.signInWithPassword({email:em,password:pw});
+  if(!authLogin.error&&authLogin.data&&authLogin.data.user){
+    var profile=await getUserProfileForAuthUser(authLogin.data.user);
+    if(!profile){
+      await DB.auth.signOut();
+      tst('err','خطأ','تم تسجيل الدخول لكن لم يتم العثور على ملف المستخدم');
+      return;
+    }
+    if(profile.status==='suspended'){
+      await DB.auth.signOut();
+      tst('err','الحساب محظور 🚫','تواصل مع الدعم');
+      return;
+    }
+    ME=profile;ADM=false;
+    saveSession(em,'',false);
+    tst('ok','مرحباً بك 👋','تم تسجيل الدخول');
+    setTimeout(function(){go('user');},500);
+    return;
+  }
+  // توافق انتقالي مع الحسابات القديمة قبل ربطها بـ Supabase Auth
+  var legacy=await DB.from('users').select('*').eq('email',em).eq('password',pw).single();
+  if(legacy.error||!legacy.data){tst('err','خطأ','البريد أو كلمة المرور غير صحيحة');return;}
+  if(legacy.data.status==='suspended'){tst('err','الحساب محظور 🚫','تواصل مع الدعم');return;}
+  try{
+    var signUp=await DB.auth.signUp({email:em,password:pw});
+    if(signUp.data&&signUp.data.user){
+      try{await DB.from('users').update({auth_user_id:signUp.data.user.id}).eq('id',legacy.data.id);}catch(e){}
+    }
+  }catch(e){}
+  ME=legacy.data;ADM=false;
+  saveSession(em,'',false);
   tst('ok','مرحباً بك 👋','تم تسجيل الدخول');
   setTimeout(function(){go('user');},500);
 }
@@ -936,11 +1003,13 @@ async function doRegister(){
   var rb=null;if(rf){var ru=await DB.from('users').select('id').eq('ref_code',rf).single();if(ru.data)rb=ru.data.id;}
   // كود الإحالة = REF + 6 أرقام عشوائية
   var rc='REF'+Math.random().toString(36).substr(2,6).toUpperCase();
-  var r=await DB.from('users').insert([{name:nm,email:em,password:pw,kyc_id:id,kyc_status:'approved',status:'pending',balance:0,profit_bal:0,pending_profit:0,bonus:0,ref_code:rc,ref_by:rb,refs_count:0,join_date:new Date().toISOString()}]).select().single();
+  var authReg=await DB.auth.signUp({email:em,password:pw});
+  if(authReg.error||!authReg.data||!authReg.data.user){tst('err','خطأ',authReg.error&&authReg.error.message?authReg.error.message:'تعذر إنشاء حساب التوثيق');return;}
+  var r=await DB.from('users').insert([{auth_user_id:authReg.data.user.id,name:nm,email:em,password:'',kyc_id:id,kyc_status:'approved',status:'pending',balance:0,profit_bal:0,pending_profit:0,bonus:0,ref_code:rc,ref_by:rb,refs_count:0,join_date:new Date().toISOString()}]).select().single();
   if(r.error){tst('err','خطأ',r.error.message);return;}
   if(rb){var ru2=await DB.from('users').select('refs_count').eq('id',rb).single();await DB.from('users').update({refs_count:(ru2.data?.refs_count||0)+1}).eq('id',rb);}
   ME=r.data;ADM=false;
-  saveSession(em,pw,false);
+  saveSession(em,'',false);
   tst('ok','تم إنشاء الحساب 🎉','حسابك قيد التفعيل — سيُفعَّل قريباً');
   setTimeout(function(){go('user');},600);
 }
