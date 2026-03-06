@@ -767,7 +767,17 @@ async function syncAdminPassword(){
 }
 
 async function loadC(){
-  var r=await DB.from('settings').select('*').eq('id',1).single();
+  // Prefer id=1, but gracefully fallback if the row does not exist yet.
+  var r=await DB.from('settings').select('*').eq('id',1).maybeSingle();
+  if((r.error&&r.error.code!=='PGRST116')||!r.data){
+    var fb=await DB.from('settings').select('*').order('id',{ascending:true}).limit(1).maybeSingle();
+    if(!fb.error&&fb.data)r=fb;
+  }
+  if(!r.data){
+    var seed={id:1,tron_wallet:'',eth_wallet:'',support_email:'noreply@trendyol-invest.com',withdraw_fee:6,min_withdraw:50,telegram_link:''};
+    var cr=await DB.from('settings').upsert([seed],{onConflict:'id'}).select().maybeSingle();
+    if(!cr.error&&cr.data)r=cr;
+  }
   if(r.data){C.tron=r.data.tron_wallet||'';C.eth=r.data.eth_wallet||'';C.email=r.data.support_email||'noreply@trendyol-invest.com';C.fee=r.data.withdraw_fee||6;C.mw=r.data.min_withdraw||50;C.telegram=r.data.telegram_link||'';}
 }
 
@@ -1059,7 +1069,16 @@ async function applyPending(){
 }
 
 function selA(a,el){DA=a;document.querySelectorAll('.damt').forEach(function(o){o.classList.remove('sl');});el.classList.add('sl');document.getElementById('dep-an').textContent='$'+a;}
-function selN(n,el){DN=n;document.querySelectorAll('.net').forEach(function(o){o.classList.remove('sl');});el.classList.add('sl');var addr=n==='tron'?C.tron:C.eth;document.getElementById('dep-addr').textContent=addr||'لم يُضبط';document.getElementById('dep-an').textContent='$'+DA;document.getElementById('dep-area').classList.remove('hid');}
+async function selN(n,el){
+  DN=n;
+  await loadC();
+  document.querySelectorAll('.net').forEach(function(o){o.classList.remove('sl');});
+  el.classList.add('sl');
+  var addr=n==='tron'?C.tron:C.eth;
+  document.getElementById('dep-addr').textContent=addr||'لم يُضبط';
+  document.getElementById('dep-an').textContent='$'+DA;
+  document.getElementById('dep-area').classList.remove('hid');
+}
 function cpW(){navigator.clipboard.writeText(document.getElementById('dep-addr').textContent);tst('info','تم النسخ','');}
 async function subDep(){
   if(!ME)return;
@@ -1360,13 +1379,15 @@ async function loadK(){
 async function appK(id){await DB.from('users').update({kyc_status:'approved',status:'active'}).eq('id',id);loadK();loadU();tst('ok','تم التوثيق ✅','');}
 async function rejK(id){await DB.from('users').update({kyc_status:'rejected'}).eq('id',id);loadK();tst('err','تم الرفض','');}
 
-async function editW(t){var cur=t==='tron'?C.tron:C.eth;var val=prompt('أدخل عنوان محفظة '+(t==='tron'?'TRON TRC-20':'Ethereum ERC-20')+':',cur||'');if(val!==null&&val.trim()){var upd={id:1};upd[t==='tron'?'tron_wallet':'eth_wallet']=val.trim();await DB.from('settings').upsert([upd]);if(t==='tron')C.tron=val.trim();else C.eth=val.trim();document.getElementById('adm-'+t).textContent=val.trim();tst('ok','تم الحفظ','');}}
+async function editW(t){var cur=t==='tron'?C.tron:C.eth;var val=prompt('أدخل عنوان محفظة '+(t==='tron'?'TRON TRC-20':'Ethereum ERC-20')+':',cur||'');if(val!==null&&val.trim()){var upd={id:1};upd[t==='tron'?'tron_wallet':'eth_wallet']=val.trim();var wr=await DB.from('settings').upsert([upd],{onConflict:'id'}).select().maybeSingle();if(wr.error){tst('err','فشل الحفظ',wr.error.message||'تحقق من صلاحيات settings');return;}if(t==='tron')C.tron=val.trim();else C.eth=val.trim();document.getElementById('adm-'+t).textContent=val.trim();tst('ok','تم الحفظ','');}}
 
 async function saveSet(){
   var upd={id:1,tron_wallet:document.getElementById('s-tron').value.trim(),eth_wallet:document.getElementById('s-eth').value.trim(),support_email:document.getElementById('s-email').value.trim(),withdraw_fee:parseFloat(document.getElementById('s-fee').value)||6,min_withdraw:parseFloat(document.getElementById('s-mw').value)||50,telegram_link:document.getElementById('s-telegram').value.trim()};
   var np=document.getElementById('s-ap').value;
   if(np){await DB.from('admins').update({password:np}).eq('username','admin');}
-  await DB.from('settings').upsert([upd]);await loadC();tst('ok','تم الحفظ','✅');
+  var wr=await DB.from('settings').upsert([upd],{onConflict:'id'}).select().maybeSingle();
+  if(wr.error){tst('err','فشل حفظ الإعدادات',wr.error.message||'تحقق من صلاحيات settings');return;}
+  await loadC();tst('ok','تم الحفظ','✅');
 }
 
 // SCHEDULER
