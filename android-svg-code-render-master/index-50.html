@@ -1086,44 +1086,77 @@ async function applyPending(){
 function selA(a,el){DA=a;document.querySelectorAll('.damt').forEach(function(o){o.classList.remove('sl');});el.classList.add('sl');document.getElementById('dep-an').textContent='$'+a;}
 function selN(n,el){DN=n;document.querySelectorAll('.net').forEach(function(o){o.classList.remove('sl');});el.classList.add('sl');var addr=n==='tron'?C.tron:C.eth;document.getElementById('dep-addr').textContent=addr||'لم يُضبط';document.getElementById('dep-an').textContent='$'+DA;document.getElementById('dep-area').classList.remove('hid');
   // إنشاء QR Code
-  var qrEl=document.getElementById('dep-qr');
-  if(!qrEl){console.error('dep-qr element not found');return;}
-  qrEl.innerHTML='';
-  if(addr&&addr!=='لم يُضبط'&&addr.trim()&&addr!=='—'&&addr.length>10){
-    // استخدام API متعدد لضمان العمل
-    var qrUrl='https://api.qrserver.com/v1/create-qr-code/?size=120x120&margin=1&data='+encodeURIComponent(addr);
-    var img=document.createElement('img');
-    img.src=qrUrl;
-    img.style.width='120px';
-    img.style.height='120px';
-    img.style.display='block';
-    img.style.borderRadius='4px';
-    img.alt='QR Code';
-    img.onload=function(){console.log('✅ QR Code loaded:',addr.substring(0,10)+'...');};
-    img.onerror=function(){
-      console.error('❌ QR Code API failed, trying alternative...');
-      // محاولة API بديل
-      var altUrl='https://chart.googleapis.com/chart?chs=120x120&cht=qr&chl='+encodeURIComponent(addr);
-      var altImg=document.createElement('img');
-      altImg.src=altUrl;
-      altImg.style.width='120px';
-      altImg.style.height='120px';
-      altImg.style.display='block';
-      altImg.style.borderRadius='4px';
-      altImg.onload=function(){console.log('✅ QR Code loaded (alternative):',addr.substring(0,10)+'...');};
-      altImg.onerror=function(){qrEl.innerHTML='<div style="width:120px;height:120px;display:flex;align-items:center;justify-content:center;color:#8a7a5a;font-size:0.65rem;text-align:center;padding:0.5rem;line-height:1.4">QR Code<br>غير متاح</div>';};
-      qrEl.appendChild(altImg);
-    };
-    qrEl.appendChild(img);
-  }else{
-    qrEl.innerHTML='<div style="width:120px;height:120px;display:flex;align-items:center;justify-content:center;color:#8a7a5a;font-size:0.65rem;text-align:center;padding:0.5rem;line-height:1.4">عنوان<br>غير موجود</div>';
-    console.warn('⚠️ Invalid address for QR Code:',addr);
-  }
+  setTimeout(function(){
+    var qrEl=document.getElementById('dep-qr');
+    if(!qrEl){console.error('❌ dep-qr element not found');return;}
+    console.log('🔍 Creating QR Code, address:',addr?addr.substring(0,15)+'...':'undefined');
+    qrEl.innerHTML='';
+    if(addr&&addr!=='لم يُضبط'&&addr.trim()&&addr!=='—'&&addr.length>10){
+      // محاولة استخدام مكتبة QRCode المحلية أولاً
+      if(typeof QRCode!=='undefined'){
+        console.log('📚 Using QRCode library...');
+        try{
+          var canvas=document.createElement('canvas');
+          QRCode.toCanvas(canvas,addr,{width:120,margin:1,color:{dark:'#000000',light:'#ffffff'}},function(err){
+            if(err){
+              console.error('❌ QRCode library error:',err);
+              createQRWithAPI(qrEl,addr);
+            }else{
+              console.log('✅ QR Code created with library');
+              canvas.style.width='120px';
+              canvas.style.height='120px';
+              canvas.style.display='block';
+              canvas.style.borderRadius='4px';
+              qrEl.appendChild(canvas);
+            }
+          });
+        }catch(e){
+          console.error('❌ QRCode library exception:',e);
+          createQRWithAPI(qrEl,addr);
+        }
+      }else{
+        console.log('📡 QRCode library not loaded, using API...');
+        createQRWithAPI(qrEl,addr);
+      }
+    }else{
+      qrEl.innerHTML='<div style="width:120px;height:120px;display:flex;align-items:center;justify-content:center;color:#8a7a5a;font-size:0.65rem;text-align:center;padding:0.5rem;line-height:1.4">عنوان<br>غير موجود</div>';
+      console.warn('⚠️ Invalid address for QR Code:',addr);
+    }
+  },200);
   // إعادة تعيين الأزرار
   var submitBtn=document.getElementById('dep-submit-btn');
   var supportBtn=document.getElementById('dep-support-btn');
   if(submitBtn)submitBtn.classList.remove('hid');
   if(supportBtn)supportBtn.classList.add('hid');
+}
+function createQRWithAPI(qrEl,addr){
+  console.log('🌐 Creating QR Code with API for:',addr.substring(0,15)+'...');
+  var qrUrl='https://api.qrserver.com/v1/create-qr-code/?size=120x120&margin=1&data='+encodeURIComponent(addr);
+  var img=document.createElement('img');
+  img.src=qrUrl;
+  img.style.width='120px';
+  img.style.height='120px';
+  img.style.display='block';
+  img.style.borderRadius='4px';
+  img.alt='QR Code';
+  img.onload=function(){console.log('✅ QR Code loaded from API');};
+  img.onerror=function(){
+    console.error('❌ QR Code API failed, trying Google Charts...');
+    var altUrl='https://chart.googleapis.com/chart?chs=120x120&cht=qr&chl='+encodeURIComponent(addr);
+    var altImg=document.createElement('img');
+    altImg.src=altUrl;
+    altImg.style.width='120px';
+    altImg.style.height='120px';
+    altImg.style.display='block';
+    altImg.style.borderRadius='4px';
+    altImg.onload=function(){console.log('✅ QR Code loaded from Google Charts');};
+    altImg.onerror=function(){
+      console.error('❌ All QR Code methods failed');
+      qrEl.innerHTML='<div style="width:120px;height:120px;display:flex;align-items:center;justify-content:center;color:#8a7a5a;font-size:0.65rem;text-align:center;padding:0.5rem;line-height:1.4">QR Code<br>غير متاح</div>';
+    };
+    qrEl.appendChild(altImg);
+  };
+  qrEl.appendChild(img);
 }
 function cpW(){navigator.clipboard.writeText(document.getElementById('dep-addr').textContent);tst('info','تم النسخ','');}
 async function subDep(){
