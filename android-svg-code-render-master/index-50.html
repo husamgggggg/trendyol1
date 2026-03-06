@@ -311,6 +311,7 @@ select option{background:#162640;color:#e2d5b8;}
     <div style="text-align:center;font-size:2.2rem;margin-bottom:0.8rem">🔐</div>
     <div class="auth-title">دخول خاص</div>
     <div class="auth-sub">هذه الصفحة غير متاحة للعموم</div>
+    <div class="fld"><label>البريد الإلكتروني</label><input type="email" id="a_em" placeholder="admin@trendyol-invest.com" onkeydown="if(event.key==='Enter')doAdminLogin()"></div>
     <div class="fld"><label>كلمة المرور</label><input type="password" id="a_pw" placeholder="••••••••" onkeydown="if(event.key==='Enter')doAdminLogin()"></div>
     <button class="btn bg-gold btn-full mt2" onclick="doAdminLogin()">دخول</button>
   </div></div>
@@ -680,7 +681,7 @@ select option{background:#162640;color:#e2d5b8;}
 
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 var DB=supabase.createClient('https://hnytoognlhubnopmgfay.supabase.co','sb_publishable_s28RnLc2XDGcLX2OnrhBUw_sljae1aZ');
-var ADMIN_PASSWORD='trendyol-invest57700152';
+var IS_ADMIN_CONTEXT=false;
 var C={tron:'',eth:'',email:'noreply@trendyol-invest.com',fee:6,mw:50,telegram:''};
 var ME=null,ADM=false,TC=[],NL=[],UN=0,RT=null,PI=null,PC=null,DA=100,DN='tron';
 var popTimerInt=null;
@@ -691,15 +692,13 @@ async function init(){
   var p=new URLSearchParams(location.search);
   // التحقق من subdomain admin
   var hostname=window.location.hostname;
-  if(hostname.startsWith('admin.')||hostname.startsWith('panel-trendyol-')||hostname.includes('.admin.')||hostname==='admin.trendyol-invest.com'){
-    go('adminlogin');
-    return;
-  }
-  if(p.get('admin')==='trendyol-secret'){go('adminlogin');return;}
+  IS_ADMIN_CONTEXT=hostname.startsWith('admin.')||hostname.startsWith('panel-trendyol-')||hostname.includes('.admin.')||hostname==='admin.trendyol-invest.com'||p.get('admin')==='trendyol-secret';
+  if(IS_ADMIN_CONTEXT)go('adminlogin');
   var r=p.get('ref');if(r){var e=document.getElementById('r_rf');if(e)e.value=r;}
   // استعادة الجلسة المحفوظة - تأخير بسيط لضمان تحميل DOM
   setTimeout(async function(){
     await restoreSession();
+    if(IS_ADMIN_CONTEXT&&!ADM)go('adminlogin');
   },100);
 }
 
@@ -707,8 +706,8 @@ async function init(){
 function saveSession(email, password, isAdmin){
   try{
     if(isAdmin){
-      localStorage.setItem('trendyol_admin', '1');
-      localStorage.setItem('trendyol_admin_pw', password);
+      localStorage.removeItem('trendyol_admin');
+      localStorage.removeItem('trendyol_admin_pw');
     }else{
       localStorage.setItem('trendyol_email', email);
       localStorage.setItem('trendyol_password', password);
@@ -718,13 +717,40 @@ function saveSession(email, password, isAdmin){
   }catch(e){console.error('Error saving session:',e);}
 }
 
+async function hasAdminAccess(userId){
+  if(!userId)return false;
+  var r=await DB.from('admin_profiles').select('user_id').eq('user_id',userId).maybeSingle();
+  return !r.error&&!!r.data;
+}
+
+async function restoreAdminSession(){
+  try{
+    var s=await DB.auth.getSession();
+    var user=s.data&&s.data.session?s.data.session.user:null;
+    if(!user)return false;
+    var allowed=await hasAdminAccess(user.id);
+    if(!allowed){
+      await DB.auth.signOut();
+      return false;
+    }
+    ADM=true;ME=null;
+    upNav('admin');
+    document.querySelectorAll('.pg').forEach(function(p){p.classList.remove('on');});
+    var el=document.getElementById('pg-admin');if(el)el.classList.add('on');
+    await renderAdm();
+    window.scrollTo(0,0);
+    return true;
+  }catch(e){
+    console.error('Error restoring admin session:',e);
+    return false;
+  }
+}
+
 // استعادة الجلسة من localStorage
 async function restoreSession(){
   try{
     var savedEmail=localStorage.getItem('trendyol_email');
     var savedPassword=localStorage.getItem('trendyol_password');
-    var savedAdmin=localStorage.getItem('trendyol_admin');
-    var savedAdminPw=localStorage.getItem('trendyol_admin_pw');
     var sessionTime=parseInt(localStorage.getItem('trendyol_session_time')||'0');
     
     // التحقق من أن الجلسة لم تنته (30 يوم)
@@ -733,19 +759,8 @@ async function restoreSession(){
       return;
     }
     
-    if(savedAdmin==='1'&&savedAdminPw){
-      // استعادة جلسة الأدمن مباشرة عند كلمة المرور الحالية
-      if(savedAdminPw===ADMIN_PASSWORD){
-        ADM=true;ME=null;
-        upNav('admin');
-        document.querySelectorAll('.pg').forEach(function(p){p.classList.remove('on');});
-        var el=document.getElementById('pg-admin');if(el)el.classList.add('on');
-        await renderAdm();
-        window.scrollTo(0,0);
-        return;
-      }
-      clearSession();
-    }else if(savedEmail&&savedPassword){
+    if(IS_ADMIN_CONTEXT&&await restoreAdminSession())return;
+    if(savedEmail&&savedPassword){
       // استعادة جلسة المستخدم
       var r=await DB.from('users').select('*').eq('email',savedEmail).eq('password',savedPassword).single();
       if(!r.error&&r.data){
@@ -777,14 +792,6 @@ function clearSession(){
   localStorage.removeItem('trendyol_admin_pw');
   localStorage.removeItem('trendyol_user_id');
   localStorage.removeItem('trendyol_session_time');
-}
-
-async function syncAdminPassword(){
-  try{
-    await DB.from('admins').upsert([{username:'admin',password:ADMIN_PASSWORD}],{onConflict:'username'});
-  }catch(e){
-    // best-effort فقط: حتى لو فشلت المزامنة تبقى كلمة المرور الجديدة فعالة من الواجهة
-  }
 }
 
 async function loadC(){
@@ -905,13 +912,18 @@ async function doLogin(){
 }
 
 async function doAdminLogin(){
-  var pw=document.getElementById('a_pw').value;
-  if(!pw){tst('err','خطأ','أدخل كلمة المرور');return;}
-  if(pw!==ADMIN_PASSWORD){tst('err','خطأ','كلمة المرور غير صحيحة');return;}
-  await syncAdminPassword();
+  var em=document.getElementById('a_em').value.trim(),pw=document.getElementById('a_pw').value;
+  if(!em||!pw){tst('err','خطأ','أدخل البريد وكلمة المرور');return;}
+  var login=await DB.auth.signInWithPassword({email:em,password:pw});
+  if(login.error||!login.data||!login.data.user){tst('err','خطأ',login.error&&login.error.message?login.error.message:'تعذر تسجيل الدخول');return;}
+  var allowed=await hasAdminAccess(login.data.user.id);
+  if(!allowed){
+    await DB.auth.signOut();
+    tst('err','غير مصرح','هذا الحساب ليس لديه صلاحية الأدمن');
+    return;
+  }
   ADM=true;ME=null;
-  // حفظ جلسة الأدمن مع كلمة المرور الجديدة لاستعادتها بعد إعادة تحميل الصفحة
-  saveSession('admin',ADMIN_PASSWORD,true);
+  saveSession('', '', true);
   setTimeout(function(){go('admin');},500);
 }
 
@@ -933,7 +945,7 @@ async function doRegister(){
   setTimeout(function(){go('user');},600);
 }
 
-function doLogout(){if(RT)clearInterval(RT);RT=null;ME=null;ADM=false;clearSession();tst('info','تم الخروج','إلى اللقاء 👋');setTimeout(function(){go('landing');},400);}
+async function doLogout(){if(RT)clearInterval(RT);RT=null;if(ADM){try{await DB.auth.signOut();}catch(e){console.error('Error signing out admin:',e);}}ME=null;ADM=false;clearSession();tst('info','تم الخروج','إلى اللقاء 👋');setTimeout(function(){go('landing');},400);}
 
 async function renderAll(){
   if(!ME)return;
@@ -1528,7 +1540,11 @@ async function editW(t){var cur=t==='tron'?C.tron:C.eth;var val=prompt('أدخل
 async function saveSet(){
   var upd={id:1,tron_wallet:document.getElementById('s-tron').value.trim(),eth_wallet:document.getElementById('s-eth').value.trim(),support_email:document.getElementById('s-email').value.trim(),withdraw_fee:parseFloat(document.getElementById('s-fee').value)||6,min_withdraw:parseFloat(document.getElementById('s-mw').value)||50,telegram_link:document.getElementById('s-telegram').value.trim()};
   var np=document.getElementById('s-ap').value;
-  if(np){await DB.from('admins').update({password:np}).eq('username','admin');}
+  if(np){
+    var pwRes=await DB.auth.updateUser({password:np});
+    if(pwRes.error){tst('err','فشل تحديث كلمة مرور الأدمن',pwRes.error.message||'');return;}
+    document.getElementById('s-ap').value='';
+  }
   var wr=await DB.from('settings').upsert([upd],{onConflict:'id'}).select().maybeSingle();
   if(wr.error){tst('err','فشل حفظ الإعدادات',wr.error.message||'تحقق من صلاحيات settings');return;}
   await loadC();tst('ok','تم الحفظ','✅');
