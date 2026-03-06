@@ -515,7 +515,7 @@ select option{background:#162640;color:#e2d5b8;}
     <div id="at-users" class="asec">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.1rem;flex-wrap:wrap;gap:0.6rem">
         <div style="font-size:1.2rem;font-weight:800">👥 المستخدمون</div>
-        <input style="width:190px;padding:0.45rem 0.8rem;background:#0a1628;border:1.5px solid rgba(212,169,74,0.2);border-radius:9px;color:#e2d5b8;font-family:'Tajawal',sans-serif;font-size:0.83rem;outline:none" placeholder="بحث..." oninput="loadU(this.value)">
+        <input style="width:190px;padding:0.45rem 0.8rem;background:#0a1628;border:1.5px solid rgba(212,169,74,0.2);border-radius:9px;color:#e2d5b8;font-family:'Tajawal',sans-serif;font-size:0.83rem;outline:none" placeholder="بحث بالاسم أو الإيميل أو الآيدي..." oninput="loadU(this.value)">
       </div>
       <div class="ulist" id="adm-ul"><div style="text-align:center;padding:2rem;color:#8a7a5a">جارٍ التحميل...</div></div>
     </div>
@@ -1263,9 +1263,23 @@ async function renderAdm(){
 }
 
 async function loadU(q){
-  var qr=DB.from('users').select('*').order('join_date',{ascending:false});
-  if(q)qr=qr.or('name.ilike.%'+q+'%,email.ilike.%'+q+'%');
-  var r=await qr.limit(50);var users=r.data||[];var el=document.getElementById('adm-ul');
+  var r=await DB.from('users').select('*').order('join_date',{ascending:false}).limit(200);
+  var users=r.data||[];var el=document.getElementById('adm-ul');
+  if(q){
+    var nq=q.trim().toLowerCase();
+    var compactQ=nq.replace(/^#/,'');
+    users=users.filter(function(u){
+      var fullId=(u.id||'').toLowerCase();
+      var shortId=fullId?fullId.split('-')[0].toLowerCase():'';
+      return (u.name||'').toLowerCase().includes(nq)
+        || (u.email||'').toLowerCase().includes(nq)
+        || (u.ref_code||'').toLowerCase().includes(nq)
+        || fullId===nq
+        || fullId.includes(nq)
+        || shortId===compactQ
+        || shortId.includes(compactQ);
+    });
+  }
   if(!users.length){el.innerHTML='<div style="text-align:center;padding:2rem;color:#8a7a5a">لا يوجد مستخدمون</div>';return;}
   el.innerHTML=users.map(function(u){
     var uid8=u.id?u.id.split('-')[0].toUpperCase():'—';
