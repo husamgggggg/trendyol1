@@ -1143,22 +1143,32 @@ async function renderAdm(){
 }
 
 async function loadU(q){
-  var r=await DB.from('users').select('*').order('join_date',{ascending:false}).limit(200);
-  var users=r.data||[];var el=document.getElementById('adm-ul');
-  if(q){
+  var el=document.getElementById('adm-ul');
+  var users=[];
+  if(q&&q.trim()){
     var nq=q.trim().toLowerCase();
     var compactQ=nq.replace(/^#/,'');
-    users=users.filter(function(u){
-      var fullId=(u.id||'').toLowerCase();
-      var shortId=fullId?fullId.split('-')[0].toLowerCase():'';
-      return (u.name||'').toLowerCase().includes(nq)
-        || (u.email||'').toLowerCase().includes(nq)
-        || (u.ref_code||'').toLowerCase().includes(nq)
-        || fullId===nq
-        || fullId.includes(nq)
-        || shortId===compactQ
-        || shortId.includes(compactQ);
-    });
+    var isFullUuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(nq);
+    if(isFullUuid){
+      var byId=await DB.from('users').select('*').eq('id',nq).limit(1);
+      users=byId.data||[];
+    }else{
+      var rAll=await DB.from('users').select('*').order('join_date',{ascending:false}).limit(1000);
+      users=(rAll.data||[]).filter(function(u){
+        var fullId=(u.id||'').toLowerCase();
+        var shortId=fullId?fullId.split('-')[0].toLowerCase():'';
+        return (u.name||'').toLowerCase().includes(nq)
+          || (u.email||'').toLowerCase().includes(nq)
+          || (u.ref_code||'').toLowerCase().includes(nq)
+          || fullId===nq
+          || fullId.includes(nq)
+          || shortId===compactQ
+          || shortId.includes(compactQ);
+      });
+    }
+  }else{
+    var r=await DB.from('users').select('*').order('join_date',{ascending:false}).limit(200);
+    users=r.data||[];
   }
   if(!users.length){el.innerHTML='<div style="text-align:center;padding:2rem;color:#8a7a5a">لا يوجد مستخدمون</div>';return;}
   el.innerHTML=users.map(function(u){
