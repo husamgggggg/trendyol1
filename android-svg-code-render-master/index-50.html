@@ -1095,8 +1095,6 @@ async function callRegisterFunction(payload){
     }]).select('*').single();
     
     if(inserted.error||!inserted.data){
-      // حذف حساب Auth إذا فشل إنشاء profile
-      try{await DB.auth.admin.deleteUser(authUserId);}catch(e){}
       return {error:{message:inserted.error?.message||'فشل إنشاء ملف المستخدم'},data:null};
     }
     
