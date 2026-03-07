@@ -675,7 +675,19 @@ select option{background:#162640;color:#e2d5b8;}
     </div>
     <div class="ibox"><strong>الرصيد المتاح للسحب</strong><span style="font-size:1.2rem;font-weight:900;color:#f0c96a" id="wd-av">$0</span></div>
     <div class="fld"><label>المبلغ المطلوب سحبه</label><input type="number" id="wd-am" placeholder="الحد الأدنى $50" oninput="calcF()"></div>
-    <div class="fld"><label>عنوان محفظتك (TRC-20 أو ERC-20)</label><input id="wd-wl" placeholder="أدخل عنوان محفظتك"></div>
+    <div style="font-size:0.74rem;color:#8a7a5a;margin-bottom:0.6rem">اختر الشبكة</div>
+    <div class="nets">
+      <div class="net" id="wn-tron" onclick="selWNet('tron',this)">🔵 TRON TRC-20</div>
+      <div class="net" id="wn-eth" onclick="selWNet('eth',this)">💠 Ethereum ERC-20</div>
+    </div>
+    <div class="fld">
+      <label>عنوان محفظتك</label>
+      <div style="display:flex;gap:0.4rem;align-items:center">
+        <input id="wd-wl" placeholder="أدخل عنوان محفظتك" style="flex:1">
+        <button onclick="copyWalletAddress()" style="background:#22c55e;color:#fff;border:none;padding:0.5rem 0.8rem;border-radius:6px;cursor:pointer;font-size:0.8rem;white-space:nowrap;transition:background 0.2s" onmouseover="this.style.background='#16a34a'" onmouseout="this.style.background='#22c55e'" title="نسخ آخر عنوان محفظة استخدمته">📋 نسخ آخر عنوان</button>
+      </div>
+      <div id="wd-last-wallet" style="font-size:0.7rem;color:#8a7a5a;margin-top:0.3rem;display:none"></div>
+    </div>
     <div class="ibox"><strong>رسوم السحب 6%</strong> — ستستلم: <span id="wd-af" style="color:#f0c96a;font-weight:700">$0.00</span></div>
     <div class="ibox" style="font-size:0.75rem;color:#8a7a5a">⚠️ الحد الأدنى للسحب $50 — سيتم معالجة طلبك خلال 24 ساعة</div>
     <button class="btn bg-gold btn-full mt1" onclick="subWd()">📤 تأكيد طلب السحب</button>
@@ -1426,6 +1438,62 @@ function sendToSupport(){
 }
 
 function calcF(){var a=parseFloat(document.getElementById('wd-am').value)||0;document.getElementById('wd-af').textContent='$'+(a*(1-C.fee/100)).toFixed(2);}
+
+function selWNet(n,el){
+  window._wNet=n;
+  document.querySelectorAll('#wn-tron,#wn-eth').forEach(function(o){o.classList.remove('sl');});
+  el.classList.add('sl');
+  // تحميل آخر عنوان محفظة للشبكة المختارة
+  loadLastWalletAddress();
+}
+
+async function loadLastWalletAddress(){
+  if(!ME)return;
+  try{
+    var r=await DB.from('withdrawals').select('wallet,network').eq('user_id',ME.id).order('created_at',{ascending:false}).limit(1).maybeSingle();
+    if(!r.error&&r.data&&r.data.wallet){
+      var wnet=window._wNet||'';
+      var netLabel=wnet==='tron'?'TRON TRC-20':'Ethereum ERC-20';
+      // إذا كانت الشبكة المختارة تطابق آخر سحب، اعرض العنوان
+      if(r.data.network===netLabel||!wnet){
+        var lastWalletEl=document.getElementById('wd-last-wallet');
+        if(lastWalletEl){
+          lastWalletEl.style.display='block';
+          lastWalletEl.innerHTML='آخر عنوان استخدمته: <span style="color:#f0c96a;font-family:monospace;font-size:0.75rem">'+r.data.wallet+'</span>';
+          window._lastWalletAddress=r.data.wallet;
+        }
+      }else{
+        var lastWalletEl=document.getElementById('wd-last-wallet');
+        if(lastWalletEl)lastWalletEl.style.display='none';
+        window._lastWalletAddress=null;
+      }
+    }else{
+      var lastWalletEl=document.getElementById('wd-last-wallet');
+      if(lastWalletEl)lastWalletEl.style.display='none';
+      window._lastWalletAddress=null;
+    }
+  }catch(e){
+    console.error('Error loading last wallet:',e);
+  }
+}
+
+function copyWalletAddress(){
+  var inputEl=document.getElementById('wd-wl');
+  var address=inputEl.value.trim();
+  
+  // إذا كان الحقل فارغاً، استخدم آخر عنوان محفظة
+  if(!address&&window._lastWalletAddress){
+    address=window._lastWalletAddress;
+    inputEl.value=address;
+  }
+  
+  if(!address){
+    tst('err','لا يوجد عنوان للنسخ','أدخل عنوان المحفظة أولاً أو اختر الشبكة');
+    return;
+  }
+  
+  copyToClipboard(address);
+}
 
 async function subWd(){
   if(!ME)return;
