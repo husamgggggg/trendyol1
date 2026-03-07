@@ -1249,7 +1249,7 @@ async function renderAll(){
   var rc=document.getElementById('my-rcode');if(rc)rc.textContent=ME.ref_code;
   rCards();
   await loadTC();renderCG();
-  rWallet();rRef();rHist();
+  rWallet();rRef();rHist();rCodesH();
   // إذا كان هناك ربح معلق استأنف العداد
   if((ME.pending_profit||0)>0){
     var lc=await DB.from('codes_log').select('used_at').eq('user_id',ME.id).eq('used',true).order('used_at',{ascending:false}).limit(1).single();
@@ -1328,9 +1328,51 @@ async function rHist(){
 
 async function rCodesH(){
   if(!ME)return;
-  var r=await DB.from('codes_log').select('*').eq('user_id',ME.id).eq('used',true).order('used_at',{ascending:false});
-  var codes=r.data||[];var bal=ME.balance||0;
-  document.getElementById('cd-hist').innerHTML=codes.length?codes.map(function(c){return'<tr><td style="font-family:monospace;color:#f0c96a;font-weight:700">'+c.code+'</td><td>'+c.profit_pct+'%</td><td style="color:#22c55e;font-weight:700">$'+(bal*c.profit_pct/100).toFixed(2)+'</td><td>'+fd(c.used_at)+'</td><td><span class="badge b-g">مكتمل</span></td></tr>';}).join(''):'<tr class="et"><td colspan="5">لا توجد أكواد</td></tr>';
+  // عرض جميع الأكواد (مستخدمة وغير مستخدمة) مع حالتها
+  var today=new Date().toISOString().split('T')[0];
+  var r=await DB.from('codes_log').select('*').eq('user_id',ME.id).gte('created_at',today+'T00:00:00').order('created_at',{ascending:false});
+  var codes=r.data||[];
+  if(!codes.length){
+    document.getElementById('cd-hist').innerHTML='<tr class="et"><td colspan="5">لا توجد أكواد</td></tr>';
+    return;
+  }
+  // جلب المعاملات المرتبطة بالأكواد المستخدمة للحصول على مبلغ الربح الفعلي
+  var usedCodes=codes.filter(function(c){return c.used&&c.used_at;}).map(function(c){return c.code;});
+  var profitMap={};
+  if(usedCodes.length){
+    var txr=await DB.from('transactions').select('code_used,amount').eq('user_id',ME.id).eq('type','كود ربح').in('code_used',usedCodes);
+    if(txr.data){
+      txr.data.forEach(function(t){
+        if(t.code_used)profitMap[t.code_used]=t.amount;
+      });
+    }
+  }
+  document.getElementById('cd-hist').innerHTML=codes.map(function(c){
+    var isExp=!c.used&&(Date.now()-new Date(c.created_at).getTime()>15*60*1000);
+    var statusClass=c.used?'b-g':isExp?'b-r':'b-y';
+    var statusText=c.used?'✅ مكتمل':isExp?'❌ منتهي':'⏳ متاح';
+    var profitAmount='—';
+    var usedAt='—';
+    if(c.used&&c.used_at){
+      usedAt=fd(c.used_at);
+      // استخدام مبلغ الربح من المعاملة إذا كان متوفراً، وإلا حساب بناءً على الرصيد الحالي
+      if(profitMap[c.code]){
+        profitAmount='$'+parseFloat(profitMap[c.code]).toFixed(2);
+      }else{
+        var currentBalance=ME.balance||0;
+        profitAmount='$'+(currentBalance*c.profit_pct/100).toFixed(2);
+      }
+    }else if(isExp){
+      profitAmount='$0.00';
+    }
+    return'<tr>'
+    +'<td style="font-family:monospace;color:#f0c96a;font-weight:700">'+c.code+'</td>'
+    +'<td>'+c.profit_pct+'%</td>'
+    +'<td style="color:#22c55e;font-weight:700">'+profitAmount+'</td>'
+    +'<td style="font-size:0.75rem;color:#8a7a5a">'+usedAt+'</td>'
+    +'<td><span class="badge '+statusClass+'">'+statusText+'</span></td>'
+    +'</tr>';
+  }).join('');
 }
 
 // تفعيل الكود — مرة واحدة فقط، وينتهي بعد 15 دقيقة
@@ -1382,16 +1424,18 @@ async function applyPending(){
   if(!fr.data)return;
   var pp=parseFloat(fr.data.pending_profit)||0;
   if(pp<=0){document.getElementById('pd-box').classList.add('hid');return;}
-  var nb=parseFloat(((fr.data.balance||0)+pp).toFixed(2));
+  // الربح يُضاف فقط إلى profit_bal وليس إلى balance
   var np=parseFloat(((fr.data.profit_bal||0)+pp).toFixed(2));
-  await DB.from('users').update({balance:nb,profit_bal:np,pending_profit:0}).eq('id',ME.id);
+  await DB.from('users').update({profit_bal:np,pending_profit:0}).eq('id',ME.id);
   await DB.from('transactions').update({status:'مكتمل'}).eq('user_id',ME.id).eq('status','معلق').eq('type','كود ربح');
-  ME.balance=nb;ME.profit_bal=np;ME.pending_profit=0;
+  ME.profit_bal=np;ME.pending_profit=0;
   window._dueAt=null;window._pendingProfit=0;
   rCards();
   var wdav=document.getElementById('wd-av');if(wdav)wdav.textContent='$'+np.toFixed(2);
   document.getElementById('pd-box').classList.add('hid');
-  tst('ok','🎉 الأرباح وصلت!','تمت إضافة $'+pp.toFixed(2)+' لرصيدك');
+  tst('ok','🎉 الأرباح وصلت!','تمت إضافة $'+pp.toFixed(2)+' لرصيد الأرباح');
+  // تحديث صفحة أكوادي بعد إضافة الربح
+  rCodesH();
 }
 
 function selA(a,el){DA=a;document.querySelectorAll('.damt').forEach(function(o){o.classList.remove('sl');});el.classList.add('sl');document.getElementById('dep-an').textContent='$'+a;}
