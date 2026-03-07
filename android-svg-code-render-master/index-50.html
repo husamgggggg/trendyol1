@@ -689,6 +689,19 @@ select option{background:#162640;color:#e2d5b8;}
 </div>
 
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+// حذف Service Worker والكاش فوراً قبل أي شيء
+(function(){
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.getRegistrations().then(function(registrations){
+      registrations.forEach(function(reg){reg.unregister();});
+    });
+  }
+  if('caches' in window){
+    caches.keys().then(function(names){
+      names.forEach(function(name){caches.delete(name);});
+    });
+  }
+})();
 var SB_URL='https://gwpnwuniqkeujeowpdji.supabase.co';
 var SB_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3cG53dW5pcWtldWplb3dwZGppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5MDQ2OTgsImV4cCI6MjA4ODQ4MDY5OH0.CpzYv1xyW6cewTy0Am48qY24z85E0HvzZK8b5fAgfXM';
 var SIGNUP_FUNCTION_URL=SB_URL+'/functions/v1/register-user';
