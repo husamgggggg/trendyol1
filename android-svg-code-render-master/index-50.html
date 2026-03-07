@@ -1052,7 +1052,8 @@ async function callRegisterFunction(payload){
       email:payload.email,
       password:payload.password,
       options:{
-        data:{name:payload.name}
+        data:{name:payload.name},
+        emailRedirectTo:window.location.origin
       }
     });
     
@@ -1062,7 +1063,17 @@ async function callRegisterFunction(payload){
     
     var authUserId=signUp.data.user.id;
     
-    // 2. إنشاء profile في جدول users
+    // 2. تسجيل الدخول فوراً بعد signUp
+    var login=await DB.auth.signInWithPassword({
+      email:payload.email,
+      password:payload.password
+    });
+    
+    if(login.error||!login.data||!login.data.user){
+      return {error:{message:'تم إنشاء الحساب لكن فشل تسجيل الدخول. حاول تسجيل الدخول يدوياً.'},data:null};
+    }
+    
+    // 3. إنشاء profile في جدول users (الآن المستخدم مسجّل دخول)
     var refBy=null;
     if(payload.referralCode){
       var refLookup=await DB.from('users').select('id').eq('ref_code',payload.referralCode).maybeSingle();
@@ -1098,7 +1109,7 @@ async function callRegisterFunction(payload){
       return {error:{message:inserted.error?.message||'فشل إنشاء ملف المستخدم'},data:null};
     }
     
-    // 3. تحديث refs_count إذا كان هناك referral
+    // 4. تحديث refs_count إذا كان هناك referral
     if(refBy){
       var refCounter=await DB.from('users').select('refs_count').eq('id',refBy).maybeSingle();
       var currentRefs=(refCounter.data?.refs_count||0);
