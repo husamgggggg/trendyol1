@@ -680,14 +680,7 @@ select option{background:#162640;color:#e2d5b8;}
       <div class="net" id="wn-tron" onclick="selWNet('tron',this)">🔵 TRON TRC-20</div>
       <div class="net" id="wn-eth" onclick="selWNet('eth',this)">💠 Ethereum ERC-20</div>
     </div>
-    <div class="fld">
-      <label>عنوان محفظتك</label>
-      <div style="display:flex;gap:0.4rem;align-items:center">
-        <input id="wd-wl" placeholder="أدخل عنوان محفظتك" style="flex:1">
-        <button onclick="copyWalletAddress()" style="background:#22c55e;color:#fff;border:none;padding:0.5rem 0.8rem;border-radius:6px;cursor:pointer;font-size:0.8rem;white-space:nowrap;transition:background 0.2s" onmouseover="this.style.background='#16a34a'" onmouseout="this.style.background='#22c55e'" title="نسخ آخر عنوان محفظة استخدمته">📋 نسخ آخر عنوان</button>
-      </div>
-      <div id="wd-last-wallet" style="font-size:0.7rem;color:#8a7a5a;margin-top:0.3rem;display:none"></div>
-    </div>
+    <div class="fld"><label>عنوان محفظتك</label><input id="wd-wl" placeholder="أدخل عنوان محفظتك"></div>
     <div class="ibox"><strong>رسوم السحب 6%</strong> — ستستلم: <span id="wd-af" style="color:#f0c96a;font-weight:700">$0.00</span></div>
     <div class="ibox" style="font-size:0.75rem;color:#8a7a5a">⚠️ الحد الأدنى للسحب $50 — سيتم معالجة طلبك خلال 24 ساعة</div>
     <button class="btn bg-gold btn-full mt1" onclick="subWd()">📤 تأكيد طلب السحب</button>
