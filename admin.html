@@ -1827,6 +1827,53 @@ async function rejW(id,uid,amt){
   loadW();tst('err','❌ تم الرفض','تم إرجاع $'+amt+' لرصيد المستخدم');
 }
 
+// تحميل وعرض المعاملات
+async function loadTransactions(filter){
+  var query=DB.from('transactions').select('*').order('created_at',{ascending:false}).limit(100);
+  
+  if(filter&&filter!=='all'){
+    if(filter==='إيداع'||filter==='سحب'){
+      query=query.eq('type',filter);
+    }else if(filter==='معلق'||filter==='مكتمل'){
+      query=query.eq('status',filter);
+    }
+  }
+  
+  var r=await query;
+  if(r.error){
+    document.getElementById('adm-trans').innerHTML='<tr class="et"><td colspan="7">تعذر تحميل المعاملات</td></tr>';
+    tst('err','فشل تحميل المعاملات',r.error.message||'');
+    return;
+  }
+  
+  var trans=r.data||[];
+  if(!trans.length){
+    document.getElementById('adm-trans').innerHTML='<tr class="et"><td colspan="7">لا توجد معاملات</td></tr>';
+    return;
+  }
+  
+  var uids=[...new Set(trans.map(function(t){return t.user_id;}))];
+  var ur=await DB.from('users').select('id,name,email').in('id',uids);
+  var umap={};(ur.data||[]).forEach(function(u){umap[u.id]=u;});
+  
+  document.getElementById('adm-trans').innerHTML=trans.map(function(t){
+    var u=umap[t.user_id]||{};
+    var typeIcon=t.type==='إيداع'?'💰':t.type==='سحب'?'💸':t.type.includes('كود')?'🎯':t.type.includes('مكافأة')?'🎁':'📋';
+    var statusClass=t.status==='مكتمل'||t.status==='مؤكد'?'b-g':t.status==='مرفوض'||t.status==='rejected'?'b-r':'b-y';
+    var statusText=t.status==='مكتمل'||t.status==='مؤكد'?'✅ مكتمل':t.status==='مرفوض'||t.status==='rejected'?'❌ مرفوض':'⏳ '+t.status;
+    
+    return'<tr>'
+    +'<td><strong>'+u.name+'</strong><br><span style="font-size:0.65rem;color:#8a7a5a">'+(u.email||'—')+'</span></td>'
+    +'<td><span style="font-size:1.1rem;margin-left:0.3rem">'+typeIcon+'</span> '+t.type+'</td>'
+    +'<td style="color:#f0c96a;font-weight:700">$'+parseFloat(t.amount||0).toFixed(2)+'</td>'
+    +'<td style="font-size:0.75rem;color:#8a7a5a">'+(t.network||'—')+'</td>'
+    +'<td style="font-size:0.75rem;color:#8a7a5a">'+fd(t.created_at)+'</td>'
+    +'<td><span class="badge '+statusClass+'">'+statusText+'</span></td>'
+    +'<td style="font-family:monospace;color:#f0c96a;font-size:0.7rem">'+(t.code_used||'—')+'</td>'
+    +'</tr>';
+  }).join('');
+}
+
 function copyWalletFromButton(btn){
   var wallet=btn.getAttribute('data-wallet');
   if(!wallet||wallet==='—'||wallet===''){tst('err','لا يوجد عنوان للنسخ','');return;}
