@@ -1477,6 +1477,41 @@ async function loadLastWalletAddress(){
   }
 }
 
+function copyToClipboard(text){
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(function(){
+      tst('info','تم النسخ','تم نسخ العنوان إلى الحافظة');
+    }).catch(function(e){
+      console.error('Failed to copy:',e);
+      fallbackCopyTextToClipboard(text);
+    });
+  }else{
+    fallbackCopyTextToClipboard(text);
+  }
+}
+
+function fallbackCopyTextToClipboard(text){
+  var textArea=document.createElement('textarea');
+  textArea.value=text;
+  textArea.style.position='fixed';
+  textArea.style.left='-999999px';
+  textArea.style.top='-999999px';
+  document.body.appendChild(textArea);
+  textArea.focus();
+  textArea.select();
+  try{
+    var successful=document.execCommand('copy');
+    if(successful){
+      tst('info','تم النسخ','تم نسخ العنوان إلى الحافظة');
+    }else{
+      tst('err','فشل النسخ','يرجى نسخ العنوان يدوياً');
+    }
+  }catch(err){
+    tst('err','فشل النسخ','يرجى نسخ العنوان يدوياً');
+  }
+  document.body.removeChild(textArea);
+}
+
 function copyWalletAddress(){
   var inputEl=document.getElementById('wd-wl');
   var address=inputEl.value.trim();
@@ -1519,7 +1554,7 @@ async function subWd(){
   if(ins.error){tst('err','خطأ في الإرسال',ins.error.message);return;}
   await DB.from('transactions').insert([{user_id:ME.id,type:'سحب',amount:amt,network:netLabel,status:'معلق',created_at:new Date().toISOString()}]);
   window._wNet=null;
-  document.querySelectorAll('#wn-tron,#wn-eth').forEach(function(x){x.classList.remove('on');});
+  document.querySelectorAll('#wn-tron,#wn-eth').forEach(function(x){x.classList.remove('sl');});
   closeM('m-wd');
   document.getElementById('wd-am').value='';
   document.getElementById('wd-wl').value='';
