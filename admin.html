@@ -464,6 +464,7 @@ select option{background:#162640;color:#e2d5b8;}
     <div class="atab" data-t="refs">🔗 أكواد الإحالة</div>
     <div class="atab" data-t="deps">💰 الإيداعات</div>
     <div class="atab" data-t="wds">💸 السحوبات</div>
+    <div class="atab" data-t="trans">📋 المعاملات</div>
     <div class="atab" data-t="kyc">🪪 التوثيق</div>
     <div class="atab" data-t="set">⚙️ الإعدادات</div>
     <div style="margin-right:auto;display:flex;align-items:center;padding:0 0.6rem"><button class="btn bg-gr btn-sm" onclick="doLogout()">خروج</button></div>
@@ -542,6 +543,18 @@ select option{background:#162640;color:#e2d5b8;}
     <div id="at-wds" class="asec">
       <div style="font-size:1.2rem;font-weight:800;margin-bottom:1rem">💸 السحوبات</div>
       <div class="panel"><div class="tbl"><table><thead><tr><th>المستخدم</th><th>الآيدي</th><th>الإيميل</th><th>المبلغ</th><th>بعد الرسوم</th><th>الشبكة وعنوان المحفظة</th><th>التاريخ</th><th>الحالة</th></tr></thead><tbody id="adm-wt"><tr class="et"><td colspan="8">لا توجد طلبات</td></tr></tbody></table></div></div>
+    </div>
+    <!-- TRANSACTIONS -->
+    <div id="at-trans" class="asec hid">
+      <div style="font-size:1.2rem;font-weight:800;margin-bottom:1rem">📋 المعاملات</div>
+      <div style="display:flex;gap:0.6rem;margin-bottom:1rem;flex-wrap:wrap">
+        <button class="btn bg-ol btn-sm" onclick="loadTransactions('all')">الكل</button>
+        <button class="btn bg-ol btn-sm" onclick="loadTransactions('إيداع')">💰 الإيداعات</button>
+        <button class="btn bg-ol btn-sm" onclick="loadTransactions('سحب')">💸 السحوبات</button>
+        <button class="btn bg-ol btn-sm" onclick="loadTransactions('معلق')">⏳ معلقة</button>
+        <button class="btn bg-ol btn-sm" onclick="loadTransactions('مكتمل')">✅ مكتملة</button>
+      </div>
+      <div class="panel"><div class="tbl"><table><thead><tr><th>المستخدم</th><th>النوع</th><th>المبلغ</th><th>الشبكة</th><th>التاريخ</th><th>الحالة</th><th>الكود</th></tr></thead><tbody id="adm-trans"><tr class="et"><td colspan="7">جارٍ التحميل...</td></tr></tbody></table></div></div>
     </div>
     <!-- KYC -->
     <div id="at-kyc" class="asec">
@@ -1508,7 +1521,7 @@ async function renderAdm(){
   document.getElementById('a-u').textContent=users.count||0;document.getElementById('a-a').textContent=ac;document.getElementById('a-d').textContent='$'+td;document.getElementById('a-w').textContent='$'+tw;document.getElementById('a-p').textContent=pn;document.getElementById('a-c').textContent=codes.count||0;
   var sel=document.getElementById('c-tgt');
   if(users.data)sel.innerHTML='<option value="all">🌍 جميع النشطين</option>'+users.data.map(function(u){return'<option value="'+u.id+'">'+u.name+'</option>';}).join('');
-  loadU();loadD();loadW();loadK();loadCL();loadRefs();chkSch();
+  loadU();loadD();loadW();loadK();loadCL();loadRefs();loadTransactions('all');chkSch();
 }
 
 async function loadU(q){
