@@ -1043,21 +1043,74 @@ function getRegisterErrorMessage(err){
 }
 
 async function callRegisterFunction(payload){
-  console.log('Calling register-user with URL:',SIGNUP_FUNCTION_URL);
-  var resp=await fetch(SIGNUP_FUNCTION_URL,{
-    method:'POST',
-    headers:{
-      'Content-Type':'application/json',
-      'apikey':SB_ANON
-    },
-    body:JSON.stringify(payload)
-  });
-  var body=null;
-  try{body=await resp.json();}catch(e){}
-  if(!resp.ok){
-    return {error:{message:body&&body.error?body.error:('HTTP '+resp.status)},data:null};
+  // حل بديل: استخدام Supabase Auth مباشرة
+  try{
+    console.log('Using direct Supabase Auth registration');
+    
+    // 1. إنشاء حساب Auth
+    var signUp=await DB.auth.signUp({
+      email:payload.email,
+      password:payload.password,
+      options:{
+        data:{name:payload.name}
+      }
+    });
+    
+    if(signUp.error||!signUp.data||!signUp.data.user){
+      return {error:{message:signUp.error?.message||'فشل إنشاء الحساب'},data:null};
+    }
+    
+    var authUserId=signUp.data.user.id;
+    
+    // 2. إنشاء profile في جدول users
+    var refBy=null;
+    if(payload.referralCode){
+      var refLookup=await DB.from('users').select('id').eq('ref_code',payload.referralCode).maybeSingle();
+      if(refLookup.data)refBy=refLookup.data.id;
+    }
+    
+    var refCode='REF'+crypto.randomUUID().replace(/-/g,'').slice(0,6).toUpperCase();
+    for(var i=0;i<5;i++){
+      var codeCheck=await DB.from('users').select('id').eq('ref_code',refCode).maybeSingle();
+      if(!codeCheck.data)break;
+      refCode='REF'+crypto.randomUUID().replace(/-/g,'').slice(0,6).toUpperCase();
+    }
+    
+    var inserted=await DB.from('users').insert([{
+      auth_user_id:authUserId,
+      name:payload.name,
+      email:payload.email,
+      password:'',
+      kyc_id:payload.kycId||'',
+      kyc_status:'approved',
+      status:'pending',
+      balance:0,
+      profit_bal:0,
+      pending_profit:0,
+      bonus:0,
+      ref_code:refCode,
+      ref_by:refBy,
+      refs_count:0,
+      join_date:new Date().toISOString()
+    }]).select('*').single();
+    
+    if(inserted.error||!inserted.data){
+      // حذف حساب Auth إذا فشل إنشاء profile
+      try{await DB.auth.admin.deleteUser(authUserId);}catch(e){}
+      return {error:{message:inserted.error?.message||'فشل إنشاء ملف المستخدم'},data:null};
+    }
+    
+    // 3. تحديث refs_count إذا كان هناك referral
+    if(refBy){
+      var refCounter=await DB.from('users').select('refs_count').eq('id',refBy).maybeSingle();
+      var currentRefs=(refCounter.data?.refs_count||0);
+      await DB.from('users').update({refs_count:currentRefs+1}).eq('id',refBy);
+    }
+    
+    return {error:null,data:{ok:true,user:inserted.data}};
+  }catch(e){
+    return {error:{message:e.message||'خطأ غير متوقع'},data:null};
   }
-  return {error:null,data:body};
 }
 
 async function doRegister(){
