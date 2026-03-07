@@ -10,6 +10,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Trendyol">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="icon" type="image/png" href="icon-192.png">
@@ -700,6 +703,13 @@ select option{background:#162640;color:#e2d5b8;}
 var SB_URL='https://gwpnwuniqkeujeowpdji.supabase.co';
 var SB_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3cG53dW5pcWtldWplb3dwZGppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5MDQ2OTgsImV4cCI6MjA4ODQ4MDY5OH0.CpzYv1xyW6cewTy0Am48qY24z85E0HvzZK8b5fAgfXM';
 var SIGNUP_FUNCTION_URL=SB_URL+'/functions/v1/register-user';
+// التحقق من SB_URL
+console.log('SB_URL:',SB_URL);
+console.log('SIGNUP_FUNCTION_URL:',SIGNUP_FUNCTION_URL);
+if(SB_URL.indexOf('hnytoognlhubnopmgfay')>=0){
+  console.error('ERROR: Old Supabase URL detected!');
+  alert('خطأ: تم اكتشاف رابط Supabase قديم. يرجى مسح الكاش وإعادة تحميل الصفحة.');
+}
 var DB=supabase.createClient(SB_URL,SB_ANON,{
   auth:{
     persistSession:true,
@@ -1088,6 +1098,11 @@ function getRegisterErrorMessage(err){
 
 async function callRegisterFunction(payload){
   try{
+    console.log('Calling register-user with URL:',SIGNUP_FUNCTION_URL);
+    if(SIGNUP_FUNCTION_URL.indexOf('hnytoognlhubnopmgfay')>=0){
+      console.error('ERROR: Using old Supabase URL in fetch!');
+      return {error:{message:'خطأ: تم اكتشاف رابط Supabase قديم. يرجى مسح الكاش وإعادة تحميل الصفحة.'},data:null};
+    }
     var resp=await fetch(SIGNUP_FUNCTION_URL,{
       method:'POST',
       headers:{
