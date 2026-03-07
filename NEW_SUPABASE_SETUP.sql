@@ -305,6 +305,34 @@ USING (
 );
 
 -- Policies للأكواد
+DROP POLICY IF EXISTS "Admins can insert codes" ON public.codes_log;
+CREATE POLICY "Admins can insert codes"
+ON public.codes_log FOR INSERT
+TO authenticated
+WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM public.admin_profiles
+    WHERE admin_profiles.user_id = auth.uid()
+  )
+);
+
+DROP POLICY IF EXISTS "Admins can update codes" ON public.codes_log;
+CREATE POLICY "Admins can update codes"
+ON public.codes_log FOR UPDATE
+TO authenticated
+USING (
+  EXISTS (
+    SELECT 1 FROM public.admin_profiles
+    WHERE admin_profiles.user_id = auth.uid()
+  )
+)
+WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM public.admin_profiles
+    WHERE admin_profiles.user_id = auth.uid()
+  )
+);
+
 DROP POLICY IF EXISTS "Users can select own codes" ON public.codes_log;
 CREATE POLICY "Users can select own codes"
 ON public.codes_log FOR SELECT
