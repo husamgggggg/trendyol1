@@ -1889,8 +1889,28 @@ function mkC(){var c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',r='';for(var i=0;i<6;i++
 function fd(iso){if(!iso)return'—';return new Date(iso).toLocaleString('ar',{day:'numeric',month:'numeric',hour:'2-digit',minute:'2-digit'});}
 function sb(s){if(s==='مكتمل'||s==='مؤكد'||s==='approved')return'b-g';if(s==='مرفوض'||s==='rejected')return'b-r';return'b-y';}
 
+// حذف Service Worker القديم والكاش فوراً
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.getRegistrations().then(function(registrations){
+    registrations.forEach(function(registration){
+      registration.unregister();
+    });
+  });
+  caches.keys().then(function(cacheNames){
+    cacheNames.forEach(function(cacheName){
+      caches.delete(cacheName);
+    });
+  });
+}
+
 window.addEventListener('DOMContentLoaded',init);
-if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(function(){});}
+
+// تسجيل Service Worker الجديد بعد حذف القديم
+setTimeout(function(){
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.register('sw.js?v=2').catch(function(){});
+  }
+},1000);
 </script>
 </body>
 </html>

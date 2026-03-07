@@ -1,5 +1,5 @@
 // Service Worker لموقع ترنديول
-const CACHE_NAME = 'trendyol-v1';
+const CACHE_NAME = 'trendyol-v2';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -23,11 +23,15 @@ self.addEventListener('activate', function(event) {
     caches.keys().then(function(cacheNames) {
       return Promise.all(
         cacheNames.map(function(cacheName) {
+          // حذف جميع الكاشات القديمة
           if (cacheName !== CACHE_NAME) {
             return caches.delete(cacheName);
           }
         })
       );
+    }).then(function() {
+      // إجبار تحديث الصفحة
+      return self.clients.claim();
     })
   );
 });
