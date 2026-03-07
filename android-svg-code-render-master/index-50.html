@@ -327,7 +327,7 @@ select option{background:#162640;color:#e2d5b8;}
     <div class="fld"><label>كود الإحالة (اختياري)</label><input id="r_rf" placeholder="REF-XXXXXX"></div>
     <div class="dvd">توثيق الهوية — مطلوب</div>
     <div class="fld"><label>رقم الهوية</label><input id="r_id" placeholder="أدخل رقم هويتك"></div>
-    <button class="btn bg-gold btn-full mt2" onclick="doRegister()">إنشاء الحساب</button>
+    <button id="reg-btn" class="btn bg-gold btn-full mt2" onclick="doRegister()">إنشاء الحساب</button>
     <div class="alink mt2">لديك حساب؟ <a onclick="go('login')">سجّل الدخول</a></div>
   </div></div>
 </div>
@@ -1003,24 +1003,55 @@ async function doAdminLogin(){
   setTimeout(function(){go('admin');},500);
 }
 
+function setRegisterBusy(busy){
+  var btn=document.getElementById('reg-btn');
+  if(!btn)return;
+  btn.disabled=!!busy;
+  btn.style.opacity=busy?'0.7':'1';
+  btn.style.pointerEvents=busy?'none':'auto';
+  btn.textContent=busy?'جارٍ إنشاء الحساب...':'إنشاء الحساب';
+}
+
+function getRegisterErrorMessage(err){
+  var msg=(err&&err.message?err.message:'').toLowerCase();
+  if(msg.indexOf('rate limit')>=0||msg.indexOf('too many requests')>=0)return 'تم تجاوز حد محاولات التسجيل مؤقتًا. انتظر قليلًا ثم أعد المحاولة مرة واحدة.';
+  if(msg.indexOf('signups are disabled')>=0||msg.indexOf('email signups are disabled')>=0)return 'التسجيل عبر البريد متوقف حاليًا في إعدادات النظام.';
+  if(msg.indexOf('invalid email')>=0)return 'البريد الإلكتروني غير صالح.';
+  return err&&err.message?err.message:'تعذر إنشاء الحساب';
+}
+
 async function doRegister(){
+  if(window.__regBusy)return;
   var nm=document.getElementById('r_nm').value.trim(),em=document.getElementById('r_em').value.trim(),pw=document.getElementById('r_pw').value,rf=document.getElementById('r_rf').value.trim(),id=document.getElementById('r_id').value.trim();
   if(!nm||!em||!pw||!id){tst('err','بيانات ناقصة','أكمل جميع الحقول');return;}
   if(pw.length<6){tst('err','كلمة مرور ضعيفة','6 أحرف على الأقل');return;}
-  var ex=await DB.from('users').select('id').eq('email',em).single();
-  if(ex.data){tst('err','خطأ','البريد مسجّل مسبقاً');return;}
-  var rb=null;if(rf){var ru=await DB.from('users').select('id').eq('ref_code',rf).single();if(ru.data)rb=ru.data.id;}
-  // كود الإحالة = REF + 6 أرقام عشوائية
-  var rc='REF'+Math.random().toString(36).substr(2,6).toUpperCase();
-  var authReg=await DB.auth.signUp({email:em,password:pw});
-  if(authReg.error||!authReg.data||!authReg.data.user){tst('err','خطأ',authReg.error&&authReg.error.message?authReg.error.message:'تعذر إنشاء حساب التوثيق');return;}
-  var r=await DB.from('users').insert([{auth_user_id:authReg.data.user.id,name:nm,email:em,password:'',kyc_id:id,kyc_status:'approved',status:'pending',balance:0,profit_bal:0,pending_profit:0,bonus:0,ref_code:rc,ref_by:rb,refs_count:0,join_date:new Date().toISOString()}]).select().single();
-  if(r.error){tst('err','خطأ',r.error.message);return;}
-  if(rb){var ru2=await DB.from('users').select('refs_count').eq('id',rb).single();await DB.from('users').update({refs_count:(ru2.data?.refs_count||0)+1}).eq('id',rb);}
-  ME=r.data;ADM=false;
-  saveSession(em,'',false);
-  tst('ok','تم إنشاء الحساب 🎉','حسابك قيد التفعيل — سيُفعَّل قريباً');
-  setTimeout(function(){go('user');},600);
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)){tst('err','خطأ','البريد الإلكتروني غير صالح');return;}
+  window.__regBusy=true;
+  setRegisterBusy(true);
+  try{
+    var ex=await DB.from('users').select('id').eq('email',em).maybeSingle();
+    if(ex.error){tst('err','خطأ',ex.error.message||'تعذر التحقق من البريد');return;}
+    if(ex.data){tst('err','خطأ','البريد مسجّل مسبقاً');return;}
+    var rb=null;
+    if(rf){
+      var ru=await DB.from('users').select('id').eq('ref_code',rf).maybeSingle();
+      if(ru.data)rb=ru.data.id;
+    }
+    // كود الإحالة = REF + 6 أرقام عشوائية
+    var rc='REF'+Math.random().toString(36).substr(2,6).toUpperCase();
+    var authReg=await DB.auth.signUp({email:em,password:pw});
+    if(authReg.error||!authReg.data||!authReg.data.user){tst('err','خطأ',getRegisterErrorMessage(authReg.error));return;}
+    var r=await DB.from('users').insert([{auth_user_id:authReg.data.user.id,name:nm,email:em,password:'',kyc_id:id,kyc_status:'approved',status:'pending',balance:0,profit_bal:0,pending_profit:0,bonus:0,ref_code:rc,ref_by:rb,refs_count:0,join_date:new Date().toISOString()}]).select().single();
+    if(r.error){tst('err','خطأ',r.error.message);return;}
+    if(rb){var ru2=await DB.from('users').select('refs_count').eq('id',rb).single();await DB.from('users').update({refs_count:(ru2.data?.refs_count||0)+1}).eq('id',rb);}
+    ME=r.data;ADM=false;
+    saveSession(em,'',false);
+    tst('ok','تم إنشاء الحساب 🎉','حسابك قيد التفعيل — سيُفعَّل قريباً');
+    setTimeout(function(){go('user');},600);
+  }finally{
+    window.__regBusy=false;
+    setRegisterBusy(false);
+  }
 }
 
 async function doLogout(){if(RT)clearInterval(RT);RT=null;if(ADM){try{await DB.auth.signOut();}catch(e){console.error('Error signing out admin:',e);}}ME=null;ADM=false;clearSession();tst('info','تم الخروج','إلى اللقاء 👋');setTimeout(function(){go('landing');},400);}
@@ -1528,7 +1559,13 @@ async function loadCL(){
 }
 
 async function loadD(){
-  var r=await DB.from('deposits').select('*').order('created_at',{ascending:false}).limit(50);var deps=r.data||[];
+  var r=await DB.from('deposits').select('*').order('created_at',{ascending:false}).limit(50);
+  if(r.error){
+    document.getElementById('adm-dt').innerHTML='<tr class="et"><td colspan="6">تعذر تحميل الإيداعات</td></tr>';
+    tst('err','فشل تحميل الإيداعات',r.error.message||'');
+    return;
+  }
+  var deps=r.data||[];
   document.getElementById('adm-dt').innerHTML=deps.length?deps.map(function(d){return'<tr><td>'+d.user_name+'</td><td style="color:#f0c96a;font-weight:700">$'+d.amount+'</td><td>'+d.network+'</td><td>'+fd(d.created_at)+'</td><td><span class="badge '+(d.status==='confirmed'?'b-g':'b-y')+'">'+(d.status==='confirmed'?'مؤكد':'معلق')+'</span></td><td>'+(d.status==='pending'?'<button class="btn bg-gold btn-sm" onclick="confD(\''+d.id+'\',\''+d.user_id+'\','+d.amount+')">تأكيد</button>':'<span class="badge b-g">مؤكد ✓</span>')+'</td></tr>';}).join(''):'<tr class="et"><td colspan="6">لا توجد إيداعات</td></tr>';
 }
 
