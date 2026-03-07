@@ -1400,6 +1400,8 @@ async function useCode(){
   var fr=await DB.from('users').select('*').eq('id',ME.id).single();
   if(fr.data)ME=fr.data;
   rCards();await loadTC();renderCG();
+  // تحديث صفحة أكوادي بعد استخدام الكود
+  rCodesH();
 }
 
 // الربح يُضاف للرصيد الأساسي بعد 15 دقيقة
