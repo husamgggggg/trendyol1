@@ -1583,7 +1583,7 @@ async function confAdj(){
   var amt=parseFloat(document.getElementById('adj-amt').value);
   var dir=document.getElementById('adj-dir').value;
   var target=document.getElementById('adj-target').value;
-  var note=document.getElementById('adj-note').value||'تعديل يدوي من الإدارة';
+  var note=document.getElementById('adj-note').value||'';
   if(!uid){tst('err','خطأ','تعذر تحديد المستخدم');return;}
   if(!amt||isNaN(amt)||amt<=0){tst('err','خطأ','أدخل مبلغاً صحيحاً');return;}
   var u=await DB.from('users').select('balance,profit_bal').eq('id',uid).single();
@@ -1631,7 +1631,11 @@ async function confAdj(){
     // دمج النتائج
     upd={data:{id:upd1.data.id,balance:upd1.data.balance,profit_bal:upd2.data.profit_bal}};
   }
-  var tr=await DB.from('transactions').insert([{user_id:uid,type:type+' — '+note,amount:amt,network:'—',status:'مكتمل',created_at:new Date().toISOString()}]);
+  var transactionType=type;
+  if(note&&note.trim()){
+    transactionType=type+' — '+note;
+  }
+  var tr=await DB.from('transactions').insert([{user_id:uid,type:transactionType,amount:amt,network:'—',status:'مكتمل',created_at:new Date().toISOString()}]);
   if(tr.error){tst('err','تم تعديل الرصيد لكن فشل تسجيل العملية',tr.error.message||'');}
   closeM('m-adj');
   tst('ok','تم التعديل ✅',(dir==='add'?'أُضيف':'خُصم')+' $'+amt+' • الأساسي: $'+(upd.data.balance||0).toFixed(2)+' • الأرباح: $'+(upd.data.profit_bal||0).toFixed(2));
