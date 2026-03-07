@@ -672,7 +672,10 @@ select option{background:#162640;color:#e2d5b8;}
 </div>
 
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
-var DB=supabase.createClient('https://hnytoognlhubnopmgfay.supabase.co','sb_publishable_s28RnLc2XDGcLX2OnrhBUw_sljae1aZ');
+var SB_URL='https://hnytoognlhubnopmgfay.supabase.co';
+var SB_ANON='sb_publishable_s28RnLc2XDGcLX2OnrhBUw_sljae1aZ';
+var SIGNUP_FUNCTION_URL=SB_URL+'/functions/v1/register-user';
+var DB=supabase.createClient(SB_URL,SB_ANON);
 var IS_ADMIN_CONTEXT=true;
 var C={tron:'',eth:'',email:'noreply@trendyol-invest.com',fee:6,mw:50,telegram:''};
 var ME=null,ADM=false,TC=[],NL=[],UN=0,RT=null,PI=null,PC=null,DA=100,DN='tron';
@@ -991,6 +994,23 @@ function getRegisterErrorMessage(err){
   return err&&err.message?err.message:'تعذر إنشاء الحساب';
 }
 
+async function callRegisterFunction(payload){
+  var resp=await fetch(SIGNUP_FUNCTION_URL,{
+    method:'POST',
+    headers:{
+      'Content-Type':'application/json',
+      'apikey':SB_ANON
+    },
+    body:JSON.stringify(payload)
+  });
+  var body=null;
+  try{body=await resp.json();}catch(e){}
+  if(!resp.ok){
+    return {error:{message:body&&body.error?body.error:('HTTP '+resp.status)},data:null};
+  }
+  return {error:null,data:body};
+}
+
 async function doRegister(){
   if(window.__regBusy)return;
   var nm=document.getElementById('r_nm').value.trim(),em=document.getElementById('r_em').value.trim(),pw=document.getElementById('r_pw').value,rf=document.getElementById('r_rf').value.trim(),id=document.getElementById('r_id').value.trim();
@@ -1000,22 +1020,17 @@ async function doRegister(){
   window.__regBusy=true;
   setRegisterBusy(true);
   try{
-    var ex=await DB.from('users').select('id').eq('email',em).maybeSingle();
-    if(ex.error){tst('err','خطأ',ex.error.message||'تعذر التحقق من البريد');return;}
-    if(ex.data){tst('err','خطأ','البريد مسجّل مسبقاً');return;}
-    var rb=null;
-    if(rf){
-      var ru=await DB.from('users').select('id').eq('ref_code',rf).maybeSingle();
-      if(ru.data)rb=ru.data.id;
+    var reg=await callRegisterFunction({name:nm,email:em,password:pw,referralCode:rf,kycId:id});
+    if(reg.error||!reg.data||!reg.data.user){tst('err','خطأ',getRegisterErrorMessage(reg.error));return;}
+    var login=await DB.auth.signInWithPassword({email:em,password:pw});
+    if(login.error||!login.data||!login.data.user){
+      tst('ok','تم إنشاء الحساب 🎉','تم إنشاء الحساب، يمكنك تسجيل الدخول الآن.');
+      setTimeout(function(){go('login');},600);
+      return;
     }
-    // كود الإحالة = REF + 6 أرقام عشوائية
-    var rc='REF'+Math.random().toString(36).substr(2,6).toUpperCase();
-    var authReg=await DB.auth.signUp({email:em,password:pw});
-    if(authReg.error||!authReg.data||!authReg.data.user){tst('err','خطأ',getRegisterErrorMessage(authReg.error));return;}
-    var r=await DB.from('users').insert([{auth_user_id:authReg.data.user.id,name:nm,email:em,password:'',kyc_id:id,kyc_status:'approved',status:'pending',balance:0,profit_bal:0,pending_profit:0,bonus:0,ref_code:rc,ref_by:rb,refs_count:0,join_date:new Date().toISOString()}]).select().single();
-    if(r.error){tst('err','خطأ',r.error.message);return;}
-    if(rb){var ru2=await DB.from('users').select('refs_count').eq('id',rb).single();await DB.from('users').update({refs_count:(ru2.data?.refs_count||0)+1}).eq('id',rb);}
-    ME=r.data;ADM=false;
+    var profile=await getUserProfileForAuthUser(login.data.user);
+    if(!profile){tst('ok','تم إنشاء الحساب 🎉','تم إنشاء الحساب، يمكنك تسجيل الدخول الآن.');setTimeout(function(){go('login');},600);return;}
+    ME=profile;ADM=false;
     saveSession(em,'',false);
     tst('ok','تم إنشاء الحساب 🎉','حسابك قيد التفعيل — سيُفعَّل قريباً');
     setTimeout(function(){go('user');},600);
