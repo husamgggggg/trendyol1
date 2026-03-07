@@ -1974,6 +1974,7 @@ document.getElementById('atabs').addEventListener('click',function(e){
   tab.classList.add('on');
   var sec=document.getElementById('at-'+tab.dataset.t);if(sec)sec.classList.add('on');
   if(tab.dataset.t==='refs')loadRefs();
+  if(tab.dataset.t==='trans')loadTransactions('all');
 });
 
 // COUNTDOWN
